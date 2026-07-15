@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>羽生结弦 · 资料库 | HANYU YUZURU</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: #f8f9fc;
+      color: #1e2a3a;
+      padding: 2rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 32px;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+      padding: 2rem 2rem 3rem;
+    }
+
+    /* header / bandori style */
+    .site-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 2px solid #eef2f7;
+      padding-bottom: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-main {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #0b1a2b;
+    }
+
+    .logo-main i {
+      color: #d4a373;
+      margin-right: 6px;
+    }
+
+    .logo-sub {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #5b6f82;
+      background: #eef2f7;
+      padding: 0.2rem 0.8rem;
+      border-radius: 40px;
+      letter-spacing: 0.3px;
+    }
+
+    .header-tag {
+      font-size: 0.85rem;
+      color: #3e5a70;
+      background: #e9edf4;
+      padding: 0.3rem 1rem;
+      border-radius: 30px;
+      font-weight: 500;
+    }
+
+    /* nav */
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.2rem;
+      margin: 1.2rem 0 1.8rem 0;
+      border-bottom: 1px solid #e6ecf3;
+      padding-bottom: 1rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a {
+      color: #1f3347;
+      text-decoration: none;
+      transition: 0.2s;
+      padding: 0.2rem 0.1rem;
+      border-bottom: 2px solid transparent;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #d4a373;
+      color: #0b1a2b;
+    }
+
+    .nav-links .active {
+      border-bottom-color: #d4a373;
+      color: #0b1a2b;
+      font-weight: 600;
+    }
+
+    .band-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      background: #f2f5fa;
+      padding: 0.8rem 1.2rem;
+      border-radius: 60px;
+      margin-bottom: 2.2rem;
+      align-items: center;
+    }
+
+    .band-filter span {
+      font-weight: 600;
+      color: #1b2d3f;
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .band-filter a {
+      color: #1f3a4e;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.2rem 0.6rem;
+      border-radius: 30px;
+      transition: 0.15s;
+    }
+
+    .band-filter a:hover {
+      background: #d4a373;
+      color: white;
+    }
+
+    .band-filter .active-band {
+      background: #1f3347;
+      color: white;
+      padding: 0.2rem 0.6rem;
+      border-radius: 30px;
+    }
+
+    /* calendar area */
+    .calendar-section {
+      background: #fafcff;
+      border-radius: 28px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2.5rem;
+      border: 1px solid #e6edf6;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+    }
+
+    .calendar-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .calendar-header h2 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #0a1d2e;
+    }
+
+    .calendar-header h2 i {
+      color: #d4a373;
+      margin-right: 8px;
+    }
+
+    .calendar-header .sub-btn {
+      background: #eef2f7;
+      border: none;
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 500;
+      color: #1f3347;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.4rem;
+      margin: 1rem 0 1.5rem;
+      text-align: center;
+    }
+
+    .calendar-grid .day-name {
+      font-weight: 600;
+      color: #4d6479;
+      font-size: 0.85rem;
+      padding: 0.5rem 0;
+    }
+
+    .calendar-grid .day-cell {
+      background: white;
+      border-radius: 16px;
+      padding: 0.6rem 0;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #1a2e41;
+      transition: 0.1s;
+      border: 1px solid transparent;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .calendar-grid .day-cell.event {
+      background: #ecf3fa;
+      border-color: #d4a373;
+      color: #0b1f31;
+      font-weight: 600;
+    }
+
+    .calendar-grid .day-cell.event i {
+      color: #b48b5a;
+      font-size: 0.7rem;
+      margin-left: 4px;
+    }
+
+    .calendar-grid .day-cell.other-month {
+      color: #9aadc0;
+    }
+
+    .subscribe-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background: #f1f6fe;
+      padding: 1rem 1.5rem;
+      border-radius: 60px;
+      margin-top: 1.2rem;
+    }
+
+    .subscribe-box .sub-text {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 0.95rem;
+    }
+
+    .subscribe-box .sub-text i {
+      color: #d4a373;
+      font-size: 1.2rem;
+    }
+
+    .subscribe-box .sub-link {
+      background: white;
+      padding: 0.3rem 1.2rem;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #1b3449;
+      border: 1px solid #cddbe9;
+    }
+
+    .subscribe-box .btn-group {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .subscribe-box .btn-group .btn {
+      background: white;
+      border: 1px solid #cbd8e7;
+      padding: 0.3rem 1rem;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1b3347;
+      transition: 0.2s;
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .subscribe-box .btn-group .btn i {
+      color: #5b7a94;
+    }
+
+    /* 内容卡片：比赛/照片/视频 */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 2rem;
+      margin-top: 1.2rem;
+    }
+
+    @media (max-width: 800px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    .card {
+      background: #fafcff;
+      border-radius: 28px;
+      padding: 1.6rem 1.8rem;
+      border: 1px solid #e6edf6;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #0b1e2f;
+    }
+
+    .card h3 i {
+      color: #d4a373;
+    }
+
+    .match-list, .media-list {
+      list-style: none;
+    }
+
+    .match-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid #eaf0f7;
+      font-size: 0.95rem;
+    }
+
+    .match-list li:last-child {
+      border-bottom: none;
+    }
+
+    .match-list .date {
+      color: #4d6a83;
+      font-weight: 500;
+    }
+
+    .match-list .title {
+      font-weight: 500;
+    }
+
+    .match-list .badge {
+      background: #e2eaf3;
+      padding: 0.1rem 0.8rem;
+      border-radius: 40px;
+      font-size: 0.75rem;
+      color: #1f3b54;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .media-item {
+      background: white;
+      border-radius: 20px;
+      padding: 0.8rem 0.5rem;
+      border: 1px solid #e1eaf2;
+      text-align: center;
+      transition: 0.1s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .media-item i {
+      font-size: 1.8rem;
+      color: #a67c4e;
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+
+    .media-item a {
+      text-decoration: none;
+      color: #1b3349;
+      font-weight: 500;
+      font-size: 0.85rem;
+      display: block;
+      word-break: break-all;
+    }
+
+    .media-item a:hover {
+      color: #a67c4e;
+    }
+
+    .media-item .sub {
+      font-size: 0.7rem;
+      color: #6b839b;
+      margin-top: 3px;
+    }
+
+    .weibo-tag {
+      background: #f1e8dc;
+      padding: 0.1rem 0.6rem;
+      border-radius: 30px;
+      font-size: 0.65rem;
+      display: inline-block;
+      color: #6e4f2e;
+      margin-top: 3px;
+    }
+
+    .footer-meta {
+      margin-top: 2.8rem;
+      padding-top: 1.8rem;
+      border-top: 1px solid #e6ecf3;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #4b637b;
+    }
+
+    .footer-meta i {
+      color: #b48b5a;
+      margin: 0 4px;
+    }
+
+    .footer-meta .links a {
+      margin-left: 1.2rem;
+      color: #2f4a63;
+      text-decoration: none;
+    }
+
+    .footer-meta .links a:hover {
+      text-decoration: underline;
+    }
+
+    .github-badge {
+      background: #1e2f40;
+      color: white !important;
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      font-size: 0.75rem;
+    }
+
+    .github-badge i {
+      color: #d4a373 !important;
+    }
+
+    /* 响应式微调 */
+    @media (max-width: 600px) {
+      .container { padding: 1.2rem; }
+      .calendar-grid { gap: 0.2rem; }
+      .calendar-grid .day-cell { padding: 0.4rem 0; font-size: 0.8rem; }
+      .subscribe-box { flex-direction: column; align-items: stretch; gap: 0.8rem; }
+      .band-filter { gap: 0.3rem 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- header -->
+  <div class="site-header">
+    <div class="logo-area">
+      <span class="logo-main"><i class="fas fa-skating"></i> HANYU · 羽生</span>
+      <span class="logo-sub">资料库 / ファン資料庫</span>
+      <span class="header-tag"><i class="far fa-calendar-alt"></i> EST. 2026</span>
+    </div>
+    <div style="font-size:0.9rem; color:#3a5a72;">
+      <i class="fas fa-globe-asia"></i> 基于 GitHub Issues + Cloudflare
+    </div>
+  </div>
+
+  <!-- nav -->
+  <div class="nav-links">
+    <a href="#" class="active">首页TOP</a>
+    <a href="#">新闻NEWS</a>
+    <a href="#">日历CALENDAR</a>
+    <a href="#">今日纪念日</a>
+    <a href="#">资料库DATABASE</a>
+    <a href="#">友联LINKS</a>
+    <a href="#">随机条目</a>
+    <a href="#">提交订正</a>
+  </div>
+
+  <!-- 乐队/项目 filter 模仿band -->
+  <div class="band-filter">
+    <span><i class="fas fa-tag"></i> 项目 · 赛季</span>
+    <a href="#" class="active-band">ALL</a>
+    <a href="#">2026 世锦</a>
+    <a href="#">2025 GPF</a>
+    <a href="#">2024 全日本</a>
+    <a href="#">冰演 ICE</a>
+    <a href="#">采访</a>
+    <a href="#">练习</a>
+  </div>
+
+  <!-- 日历区域 模仿 bandori 样式 -->
+  <div class="calendar-section">
+    <div class="calendar-header">
+      <h2><i class="far fa-calendar-alt"></i> 近期日历 · 2026-07 CALENDAR</h2>
+      <span class="sub-btn"><i class="fas fa-rss"></i> 订阅日历</span>
+    </div>
+    <!-- 简易日历网格 7x6 -->
+    <div class="calendar-grid">
+      <div class="day-name">一</div><div class="day-name">二</div><div class="day-name">三</div><div class="day-name">四</div><div class="day-name">五</div><div class="day-name">六</div><div class="day-name">日</div>
+      <!-- 2026年7月1日星期三开始，但为展示事件，从6月29日(周一)开始填充，实际只展示部分 -->
+      <div class="day-cell other-month">29</div><div class="day-cell other-month">30</div><div class="day-cell">1</div>
+      <div class="day-cell">2</div><div class="day-cell">3</div><div class="day-cell">4</div><div class="day-cell">5</div>
+      <div class="day-cell">6</div><div class="day-cell">7</div><div class="day-cell">8</div><div class="day-cell">9</div><div class="day-cell">10</div><div class="day-cell">11</div><div class="day-cell">12</div>
+      <div class="day-cell event">13 <i class="fas fa-star"></i></div><div class="day-cell">14</div><div class="day-cell">15</div><div class="day-cell event">16 <i class="fas fa-video"></i></div><div class="day-cell">17</div><div class="day-cell">18</div><div class="day-cell">19</div>
+      <div class="day-cell">20</div><div class="day-cell">21</div><div class="day-cell">22</div><div class="day-cell">23</div><div class="day-cell">24</div><div class="day-cell event">25 <i class="fas fa-camera"></i></div><div class="day-cell">26</div>
+      <div class="day-cell">27</div><div class="day-cell">28</div><div class="day-cell">29</div><div class="day-cell">30</div><div class="day-cell">31</div><div class="day-cell other-month">1</div><div class="day-cell other-month">2</div>
+    </div>
+
+    <!-- 订阅 -->
+    <div class="subscribe-box">
+      <div class="sub-text">
+        <i class="fas fa-sync-alt fa-fw"></i>
+        <span>在你常用的日历应用里实时跟进活动与发售。每5分钟自动更新。</span>
+      </div>
+      <div class="sub-link">
+        <i class="fas fa-link"></i> https://bandori.fans/zh-Hans/calendar.ics
+      </div>
+      <div class="btn-group">
+        <span class="btn"><i class="fab fa-google"></i> GOOGLE</span>
+        <span class="btn"><i class="fab fa-apple"></i> APPLE</span>
+        <span class="btn"><i class="fas fa-envelope"></i> OUTLOOK</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 核心：比赛 + 媒体 (照片/视频 via 微博) -->
+  <div class="content-grid">
+    <!-- 左：比赛数据 -->
+    <div class="card">
+      <h3><i class="fas fa-trophy"></i> 比赛 · 战绩</h3>
+      <ul class="match-list">
+        <li><span class="date">2026.07.13</span><span class="title">世界花样滑冰锦标赛</span><span class="badge">金牌 🥇</span></li>
+        <li><span class="date">2026.06.20</span><span class="title">Fantasy on Ice 2026 幕张</span><span class="badge">冰演</span></li>
+        <li><span class="date">2026.05.10</span><span class="title">GPF 2025 总决赛</span><span class="badge">银牌 🥈</span></li>
+        <li><span class="date">2026.04.02</span><span class="title">全日本锦标赛</span><span class="badge">冠军</span></li>
+        <li><span class="date">2026.03.15</span><span class="title">四大洲锦标赛</span><span class="badge">金牌 🥇</span></li>
+        <li><span class="date">2025.12.11</span><span class="title">NHK杯</span><span class="badge">冠军</span></li>
+      </ul>
+      <div style="margin-top: 1rem; font-size:0.85rem; color:#3d5a73; background:#ecf3f0; padding:0.5rem 1rem; border-radius: 40px;">
+        <i class="fas fa-database"></i> 数据同步自 GitHub Issues · 由 Cloudflare 提供缓存
+      </div>
+    </div>
+
+    <!-- 右：照片 & 视频 (微博链接) -->
+    <div class="card">
+      <h3><i class="fas fa-photo-video"></i> 照片 · 视频</h3>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.8rem;">
+        <span style="background:#e4ebf3; padding:0.2rem 1rem; border-radius:30px; font-size:0.8rem;"><i class="fas fa-image"></i> 全部图片</span>
+        <span style="background:#e4ebf3; padding:0.2rem 1rem; border-radius:30px; font-size:0.8rem;"><i class="fab fa-weibo"></i> 微博直链</span>
+      </div>
+      <div class="media-grid">
+        <!-- 每个media-item 包含微博跳转 -->
+        <div class="media-item">
+          <i class="fas fa-camera-retro"></i>
+          <a href="#" onclick="window.open('https://weibo.com/1234567890/photo1','_blank'); return false;">2026 世锦赛 领奖台</a>
+          <span class="sub"><i class="fab fa-weibo"></i> 微博 · 照片</span>
+          <span class="weibo-tag"><i class="fas fa-external-link-alt"></i> 跳转</span>
+        </div>
+        <div class="media-item">
+          <i class="fas fa-video"></i>
+          <a href="#" onclick="window.open('https://weibo.com/1234567890/video1','_blank'); return false;">FS 自由滑 高清</a>
+          <span class="sub"><i class="fab fa-weibo"></i> 微博 · 视频</span>
+          <span class="weibo-tag"><i class="fas fa-play"></i> 观看</span>
+        </div>
+        <div class="media-item">
+          <i class="fas fa-camera-retro"></i>
+          <a href="#" onclick="window.open('https://weibo.com/1234567890/photo2','_blank'); return false;">冰演 幕后花絮</a>
+          <span class="sub"><i class="fab fa-weibo"></i> 照片</span>
+          <span class="weibo-tag">微博</span>
+        </div>
+        <div class="media-item">
+          <i class="fas fa-video"></i>
+          <a href="#" onclick="window.open('https://weibo.com/1234567890/video2','_blank'); return false;">2026 全日本 短节目</a>
+          <span class="sub"><i class="fab fa-weibo"></i> 视频</span>
+          <span class="weibo-tag"><i class="fas fa-play"></i> 观看</span>
+        </div>
+        <div class="media-item">
+          <i class="fas fa-camera-retro"></i>
+          <a href="#" onclick="window.open('https://weibo.com/1234567890/photo3','_blank'); return false;">练习场 高清图集</a>
+          <span class="sub"><i class="fab fa-weibo"></i> 照片</span>
+          <span class="weibo-tag">微博</span>
+        </div>
+        <div class="media-item">
+          <i class="fas fa-video"></i>
+          <a href="#" onclick="window.open('https://weibo.com/1234567890/video3','_blank'); return false;">采访 · 羽生结弦</a>
+          <span class="sub"><i class="fab fa-weibo"></i> 视频</span>
+          <span class="weibo-tag"><i class="fas fa-play"></i> 观看</span>
+        </div>
+      </div>
+      <div style="margin-top: 1rem; background:#f4f6fb; padding:0.6rem 1rem; border-radius: 60px; font-size:0.8rem; display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;">
+        <span><i class="fab fa-github"></i> 数据源: issues · 羽生结弦 库</span>
+        <span><i class="fas fa-cloud"></i> Cloudflare Workers 代理</span>
+        <span><i class="fas fa-arrow-up-right-from-square"></i> 所有视频/照片跳转微博</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <div class="footer-meta">
+    <div>
+      <i class="fas fa-skating"></i> 羽生结弦 HANYU YUZURU · 非官方资料库 
+      <span style="margin-left:0.8rem; background:#eef2f7; padding:0.1rem 0.8rem; border-radius:30px;">v2.0</span>
+    </div>
+    <div class="links">
+      <a href="#"><i class="fab fa-github"></i> GitHub</a>
+      <a href="#"><i class="fas fa-cloud"></i> Cloudflare</a>
+      <a href="#"><i class="fab fa-weibo"></i> 微博</a>
+      <span class="github-badge"><i class="fas fa-code-branch"></i> 基于 Issue + CF</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
