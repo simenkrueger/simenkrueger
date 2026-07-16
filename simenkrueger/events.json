@@ -1,0 +1,70 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "世界花样滑冰锦标赛",
+      "date": "2026-07-13",
+      "type": "比赛",
+      "season": "2025-2026",
+      "result": "金牌 🥇",
+      "location": "美国波士顿",
+      "photo": "https://weibo.com/1234567890/photo1",
+      "video": "https://weibo.com/1234567890/video1"
+    },
+    {
+      "id": 2,
+      "title": "Fantasy on Ice 2026 幕张",
+      "date": "2026-06-20",
+      "type": "冰演",
+      "season": "2025-2026",
+      "result": "",
+      "location": "日本幕张",
+      "photo": "https://weibo.com/1234567890/photo2",
+      "video": ""
+    },
+    {
+      "id": 3,
+      "title": "全日本花样滑冰锦标赛",
+      "date": "2026-04-02",
+      "type": "比赛",
+      "season": "2025-2026",
+      "result": "冠军 🏆",
+      "location": "日本大阪",
+      "photo": "https://weibo.com/1234567890/photo3",
+      "video": "https://weibo.com/1234567890/video3"
+    },
+    {
+      "id": 4,
+      "title": "四大洲花样滑冰锦标赛",
+      "date": "2026-03-15",
+      "type": "比赛",
+      "season": "2024-2025",
+      "result": "金牌 🥇",
+      "location": "中国北京",
+      "photo": "",
+      "video": "https://weibo.com/1234567890/video4"
+    },
+    {
+      "id": 5,
+      "title": "羽生结弦 特别采访",
+      "date": "2026-02-10",
+      "type": "采访",
+      "season": "2024-2025",
+      "result": "",
+      "location": "东京",
+      "photo": "https://weibo.com/1234567890/photo5",
+      "video": "https://weibo.com/1234567890/video5"
+    },
+    {
+      "id": 6,
+      "title": "冰上艺术展 2026",
+      "date": "2026-01-20",
+      "type": "展览",
+      "season": "2024-2025",
+      "result": "",
+      "location": "横滨",
+      "photo": "https://weibo.com/1234567890/photo6",
+      "video": ""
+    }
+  ]
+}
