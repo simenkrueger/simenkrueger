@@ -1,174 +1,159 @@
 {
   "season": "2024-2025",
-  "totalEvents": 14,
   "events": [
     {
-      "id": 1,
+      "id": 13,
       "title": "世界花样滑冰锦标赛 2025",
       "date": "2025-03-22",
       "type": "比赛",
       "result": "🥇 金牌",
       "location": "美国波士顿",
-      "description": "自由滑 218.67 分，总分 320.45 分，赛季完美收官",
-      "photo": "https://weibo.com/xxx/photo1",
-      "video": "https://weibo.com/xxx/video1",
-      "pdf": "2024-2025-worlds-zh.pdf"
+      "description": "总分 320.45 分",
+      "photo": "https://weibo.com/xxx/photo13",
+      "video": "https://weibo.com/xxx/video13"
     },
     {
-      "id": 2,
+      "id": 14,
       "title": "四大洲花样滑冰锦标赛 2025",
       "date": "2025-02-16",
       "type": "比赛",
       "result": "🥇 金牌",
       "location": "韩国首尔",
-      "description": "短节目 112.34 分，自由滑 210.89 分，总分 323.23 分",
-      "photo": "https://weibo.com/xxx/photo2",
-      "video": "https://weibo.com/xxx/video2",
-      "pdf": "2024-2025-4cc-zh.pdf"
+      "description": "总分 323.23 分",
+      "photo": "https://weibo.com/xxx/photo14",
+      "video": "https://weibo.com/xxx/video14"
     },
     {
-      "id": 3,
+      "id": 15,
       "title": "全日本花样滑冰锦标赛 2024",
       "date": "2024-12-20",
       "type": "比赛",
       "result": "🏆 冠军",
       "location": "日本东京",
-      "description": "短节目 105.23 分，自由滑 208.76 分，总分 313.99 分",
-      "photo": "https://weibo.com/xxx/photo3",
-      "video": "https://weibo.com/xxx/video3",
-      "pdf": "2024-2025-jpnats-zh.pdf"
+      "description": "总分 313.99 分",
+      "photo": "https://weibo.com/xxx/photo15",
+      "video": "https://weibo.com/xxx/video15"
     },
     {
-      "id": 4,
+      "id": 16,
       "title": "花样滑冰大奖赛总决赛 2024",
       "date": "2024-12-05",
       "type": "比赛",
       "result": "🥇 金牌",
       "location": "法国格勒诺布尔",
-      "description": "自由滑 205.34 分，总分 296.78 分，时隔5年再夺GPF冠军",
-      "photo": "https://weibo.com/xxx/photo4",
-      "video": "https://weibo.com/xxx/video4",
-      "pdf": "2024-2025-gpf-zh.pdf"
+      "description": "总分 296.78 分",
+      "photo": "https://weibo.com/xxx/photo16",
+      "video": "https://weibo.com/xxx/video16"
     },
     {
-      "id": 5,
+      "id": 17,
       "title": "NHK杯 2024",
       "date": "2024-11-08",
       "type": "比赛",
       "result": "🥇 金牌",
       "location": "日本大阪",
-      "description": "短节目 98.45 分，自由滑 195.23 分，总分 293.68 分",
-      "photo": "https://weibo.com/xxx/photo5",
-      "video": "https://weibo.com/xxx/video5",
-      "pdf": "2024-2025-nhk-zh.pdf"
+      "description": "总分 293.68 分",
+      "photo": "https://weibo.com/xxx/photo17",
+      "video": "https://weibo.com/xxx/video17"
     },
     {
-      "id": 6,
+      "id": 18,
       "title": "Skate Canada 2024",
       "date": "2024-10-25",
       "type": "比赛",
       "result": "🥇 金牌",
       "location": "加拿大温哥华",
-      "description": "短节目 102.56 分，自由滑 198.34 分，总分 300.90 分",
-      "photo": "https://weibo.com/xxx/photo6",
-      "video": "https://weibo.com/xxx/video6",
-      "pdf": "2024-2025-skatecanada-zh.pdf"
+      "description": "总分 300.90 分",
+      "photo": "https://weibo.com/xxx/photo18",
+      "video": "https://weibo.com/xxx/video18"
     },
     {
-      "id": 7,
+      "id": 19,
       "title": "Fantasy on Ice 2025 幕张",
       "date": "2025-06-21",
       "type": "冰演",
       "result": "",
       "location": "日本幕张",
-      "description": "新节目 'Hope & Legacy 2025' 首演",
-      "photo": "https://weibo.com/xxx/photo7",
-      "video": "https://weibo.com/xxx/video7",
-      "pdf": "2024-2025-fantasy-zh.pdf"
+      "description": "新节目 'Hope & Legacy 2025'",
+      "photo": "https://weibo.com/xxx/photo19",
+      "video": "https://weibo.com/xxx/video19"
     },
     {
-      "id": 8,
+      "id": 20,
       "title": "Fantasy on Ice 2025 神户",
       "date": "2025-06-28",
       "type": "冰演",
       "result": "",
       "location": "日本神户",
-      "description": "曲目：SEIMEI、Hope & Legacy、新编节目",
-      "photo": "https://weibo.com/xxx/photo8",
-      "video": "",
-      "pdf": ""
+      "description": "曲目：SEIMEI、Hope & Legacy",
+      "photo": "https://weibo.com/xxx/photo20",
+      "video": ""
     },
     {
-      "id": 9,
+      "id": 21,
       "title": "Fantasy on Ice 2025 静冈",
       "date": "2025-07-05",
       "type": "冰演",
       "result": "",
       "location": "日本静冈",
       "description": "赛季末冰演，与特别嘉宾共演",
-      "photo": "https://weibo.com/xxx/photo9",
-      "video": "",
-      "pdf": ""
+      "photo": "https://weibo.com/xxx/photo21",
+      "video": ""
     },
     {
-      "id": 10,
+      "id": 22,
       "title": "Stars on Ice 2025 东京",
       "date": "2025-04-12",
       "type": "冰演",
       "result": "",
       "location": "日本东京",
-      "description": "表演曲目：'SEIMEI' 经典版",
-      "photo": "https://weibo.com/xxx/photo10",
-      "video": "https://weibo.com/xxx/video10",
-      "pdf": ""
+      "description": "表演曲目：'SEIMEI'",
+      "photo": "https://weibo.com/xxx/photo22",
+      "video": "https://weibo.com/xxx/video22"
     },
     {
-      "id": 11,
+      "id": 23,
       "title": "NHK杯 2024 赛前采访",
       "date": "2024-11-06",
       "type": "采访",
       "result": "",
       "location": "日本大阪",
       "description": "'希望能在冰面上展现最好的自己'",
-      "photo": "https://weibo.com/xxx/photo11",
-      "video": "https://weibo.com/xxx/video11",
-      "pdf": ""
+      "photo": "https://weibo.com/xxx/photo23",
+      "video": "https://weibo.com/xxx/video23"
     },
     {
-      "id": 12,
+      "id": 24,
       "title": "冬奥会纪念展览 2024",
       "date": "2024-09-10",
       "type": "展览",
       "result": "",
       "location": "日本横滨",
       "description": "平昌冬奥会连冠10周年纪念展",
-      "photo": "https://weibo.com/xxx/photo12",
-      "video": "",
-      "pdf": ""
+      "photo": "https://weibo.com/xxx/photo24",
+      "video": ""
     },
     {
-      "id": 13,
+      "id": 25,
       "title": "世界锦标赛 2025 赛后采访",
       "date": "2025-03-23",
       "type": "采访",
       "result": "",
       "location": "美国波士顿",
       "description": "'感谢大家一路的支持，我会继续前进'",
-      "photo": "https://weibo.com/xxx/photo13",
-      "video": "https://weibo.com/xxx/video13",
-      "pdf": ""
+      "photo": "https://weibo.com/xxx/photo25",
+      "video": "https://weibo.com/xxx/video25"
     },
     {
-      "id": 14,
+      "id": 26,
       "title": "圣诞冰上演出 2024",
       "date": "2024-12-24",
       "type": "冰演",
       "result": "",
       "location": "日本名古屋",
       "description": "圣诞特别演出，与粉丝共度平安夜",
-      "photo": "https://weibo.com/xxx/photo14",
-      "video": "",
-      "pdf": ""
+      "photo": "https://weibo.com/xxx/photo26",
+      "video": ""
     }
   ]
 }
