@@ -1,0 +1,384 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: #f5f7fa;
+  color: #1e2a3a;
+  padding: 1.5rem;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 32px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12);
+  padding: 2rem;
+}
+
+/* ===== 头部 ===== */
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 2px solid #eef2f7;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.logo-main {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #0b1a2b;
+}
+
+.logo-main i {
+  color: #d4a373;
+  margin-right: 8px;
+}
+
+.logo-sub {
+  font-size: 0.85rem;
+  color: #5b6f82;
+  background: #eef2f7;
+  padding: 0.2rem 0.8rem;
+  border-radius: 40px;
+  margin-left: 0.5rem;
+}
+
+/* ===== 导航 ===== */
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e6ecf3;
+  padding-bottom: 0.8rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.nav-links a {
+  color: #1f3347;
+  text-decoration: none;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid transparent;
+  transition: 0.15s;
+}
+
+.nav-links a:hover,
+.nav-links .active {
+  border-bottom-color: #d4a373;
+}
+
+/* ===== 筛选器 ===== */
+.filter-section {
+  background: #f8faff;
+  border-radius: 20px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.8rem;
+  border: 1px solid #e6edf6;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  align-items: center;
+}
+
+.filter-row .label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #2d4a66;
+}
+
+.filter-tag {
+  padding: 0.25rem 1.2rem;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 1px solid #d0dce9;
+  background: white;
+  transition: 0.15s;
+}
+
+.filter-tag:hover {
+  background: #e9eef5;
+}
+
+.filter-tag.active {
+  background: #1f3347;
+  color: white;
+  border-color: #1f3347;
+}
+
+/* ===== 视图控制 ===== */
+.view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+
+.view-btn {
+  padding: 0.3rem 1.2rem;
+  border-radius: 30px;
+  border: 1px solid #d0dce9;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: 0.15s;
+}
+
+.view-btn.active {
+  background: #1f3347;
+  color: white;
+  border-color: #1f3347;
+}
+
+.view-btn i {
+  margin-right: 4px;
+}
+
+/* ===== 赛季分组 ===== */
+.season-group {
+  margin-bottom: 2rem;
+}
+
+.season-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0b1a2b;
+  padding: 0.5rem 0;
+  border-bottom: 3px solid #d4a373;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.season-title .count {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #6b839b;
+  background: #eef2f7;
+  padding: 0.1rem 0.7rem;
+  border-radius: 30px;
+}
+
+/* ===== 列表视图 ===== */
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.event-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: #fafcff;
+  border: 1px solid #eef2f7;
+  transition: 0.1s;
+  gap: 0.5rem 1rem;
+}
+
+.event-item:hover {
+  background: #f3f7fe;
+  border-color: #d4a373;
+}
+
+.event-date {
+  font-weight: 600;
+  color: #2d4a66;
+  min-width: 90px;
+  font-size: 0.9rem;
+}
+
+.event-type {
+  padding: 0.1rem 0.8rem;
+  border-radius: 30px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #e4ebf3;
+  color: #2d4a66;
+}
+
+.event-type.比赛 {
+  background: #fce9e6;
+  color: #b3412a;
+}
+.event-type.冰演 {
+  background: #e6f0fa;
+  color: #1e6a9e;
+}
+.event-type.采访 {
+  background: #e6f7e9;
+  color: #2a7a4a;
+}
+.event-type.展览 {
+  background: #f5ece6;
+  color: #a66a3e;
+}
+
+.event-title {
+  flex: 1;
+  font-weight: 500;
+}
+
+.event-result {
+  background: #f0e8d8;
+  padding: 0.1rem 0.8rem;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.event-media {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.event-media a {
+  color: #6b839b;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.event-media a:hover {
+  color: #d4a373;
+}
+
+/* ===== 卡片视图 ===== */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.event-card {
+  background: #fafcff;
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  padding: 1.2rem;
+  transition: 0.15s;
+}
+
+.event-card:hover {
+  border-color: #d4a373;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.event-card .date {
+  font-size: 0.8rem;
+  color: #6b839b;
+}
+
+.event-card .title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0.3rem 0;
+}
+
+.event-card .type {
+  display: inline-block;
+  padding: 0.1rem 0.7rem;
+  border-radius: 30px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 0.3rem;
+}
+
+.event-card .type.比赛 {
+  background: #fce9e6;
+  color: #b3412a;
+}
+.event-card .type.冰演 {
+  background: #e6f0fa;
+  color: #1e6a9e;
+}
+.event-card .type.采访 {
+  background: #e6f7e9;
+  color: #2a7a4a;
+}
+.event-card .type.展览 {
+  background: #f5ece6;
+  color: #a66a3e;
+}
+
+.event-card .media-links {
+  margin-top: 0.6rem;
+  display: flex;
+  gap: 0.8rem;
+  font-size: 0.8rem;
+}
+
+.event-card .media-links a {
+  color: #6b839b;
+  text-decoration: none;
+}
+
+.event-card .media-links a:hover {
+  color: #d4a373;
+}
+
+/* ===== 状态 ===== */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b839b;
+}
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: #6b839b;
+}
+
+/* ===== 底部 ===== */
+.footer-meta {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e6ecf3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #4b637b;
+}
+
+.footer-meta i {
+  color: #d4a373;
+}
+
+.github-badge {
+  background: #1e2f40;
+  color: white;
+  padding: 0.2rem 1rem;
+  border-radius: 40px;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem;
+  }
+  .event-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .event-date {
+    min-width: auto;
+  }
+}
