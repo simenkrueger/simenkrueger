@@ -16,7 +16,7 @@ async function loadData() {
     
     try {
         // 1. 加载索引文件
-        const indexRes = await fetch('data/index.json');
+        const indexRes = await fetch('index.json');
         if (!indexRes.ok) throw new Error('无法加载索引文件');
         const index = await indexRes.json();
         console.log('📋 索引加载成功:', index);
@@ -24,7 +24,7 @@ async function loadData() {
         // 2. 加载所有赛季数据（可优化为按需加载）
         const seasonKeys = index.seasons;
         const loadPromises = seasonKeys.map(async (season) => {
-            const res = await fetch(`data/${season}.json`);
+            const res = await fetch(`${season}.json`);
             if (res.ok) {
                 const data = await res.json();
                 return { season, data };
