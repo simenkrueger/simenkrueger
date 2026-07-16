@@ -17,7 +17,7 @@ async function fetchEvents() {
   
   try {
     // 尝试从 data/ 文件夹读取
-    let response = await fetch('data/events.json');
+    let response = await fetch('events.json');
     
     // 如果 data/events.json 不存在，尝试从根目录读取
     if (!response.ok) {
