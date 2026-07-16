@@ -1,0 +1,25 @@
+{
+  "season": "2024-2025",
+  "events": [
+    {
+      "id": 3,
+      "title": "四大洲花样滑冰锦标赛",
+      "date": "2026-03-15",
+      "type": "比赛",
+      "result": "金牌 🥇",
+      "location": "中国北京",
+      "photo": "",
+      "video": "https://weibo.com/xxx/video4"
+    },
+    {
+      "id": 4,
+      "title": "全日本花样滑冰锦标赛",
+      "date": "2026-04-02",
+      "type": "比赛",
+      "result": "冠军 🏆",
+      "location": "日本大阪",
+      "photo": "https://weibo.com/xxx/photo3",
+      "video": "https://weibo.com/xxx/video3"
+    }
+  ]
+}
