@@ -1,13 +1,13 @@
 // ============================================================
-// 羽生结弦资料库 - 按赛季拆分JSON + 分页 + 修复"全部"按钮
+// 羽生结弦资料库 - 修复加载失败时清空数据的问题
 // ============================================================
 
 // ---------- 状态 ----------
 let state = {
-    currentSeason: 'all',        // 'all' 表示全部
+    currentSeason: 'all',
     currentType: 'all',
     currentView: 'list',
-    allData: {},                 // { '2025-2026': [...], '2024-2025': [...] }
+    allData: {},
     allSeasons: [],
     page: 1,
     pageSize: 15
@@ -28,7 +28,6 @@ async function loadSeasonList() {
         const data = await res.json();
         state.allSeasons = data.seasons || [];
         renderSeasonTags();
-        // 默认加载全部
         await loadAllSeasons();
     } catch (err) {
         contentArea.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
@@ -39,10 +38,8 @@ async function loadSeasonList() {
 function renderSeasonTags() {
     if (!seasonContainer) return;
     let html = '';
-    // "全部"按钮
     const allActive = state.currentSeason === 'all' ? 'active' : '';
     html += `<span class="filter-tag ${allActive}" data-season="all">全部</span>`;
-    // 赛季按钮
     state.allSeasons.forEach(season => {
         const active = state.currentSeason === season ? 'active' : '';
         html += `<span class="filter-tag ${active}" data-season="${season}">${season}</span>`;
@@ -51,7 +48,6 @@ function renderSeasonTags() {
 
     seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(el => {
         el.addEventListener('click', function () {
-            // 移除所有赛季按钮的 active 状态
             seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
@@ -68,87 +64,121 @@ function renderSeasonTags() {
     });
 }
 
-// ---------- 3. 加载单个赛季数据 ----------
+// ---------- 3. 加载单个赛季 ----------
 async function loadSeasonData(season) {
     contentArea.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载 ${season} 数据...</div>`;
 
     try {
         const url = `data/${season}.json`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error(`${season}.json 不存在`);
-        const data = await res.json();
+
+        // 检查是否返回 HTML（404 页面）
+        const text = await res.text();
+        if (text.trim().startsWith('<')) {
+            throw new Error(`${season}.json 不存在（返回了 HTML 页面）`);
+        }
+
+        const data = JSON.parse(text);
         state.allData[season] = data.events || [];
         state.page = 1;
         renderEvents();
+
     } catch (err) {
-        contentArea.innerHTML = `<div class="empty">❌ 加载 ${season} 失败: ${err.message}</div>`;
+        console.error(`❌ 加载 ${season} 失败:`, err);
+        // ⚠️ 关键修复：加载失败时，保留旧数据，显示错误提示
+        state.allData[season] = [];
+        renderEvents();
+        // 在内容区顶部显示错误
+        const errorEl = document.createElement('div');
+        errorEl.style.cssText = `
+            background: #fce9e6; color: #b3412a; 
+            padding: 0.8rem 1.2rem; border-radius: 12px; 
+            margin-bottom: 1rem; font-size: 0.9rem;
+            border-left: 4px solid #b3412a;
+        `;
+        errorEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ⚠️ 加载 ${season} 失败: ${err.message}，请检查文件是否存在`;
+        // 插入到内容区最前面
+        contentArea.prepend(errorEl);
     }
 }
 
-// ---------- 4. 加载所有赛季数据 ----------
+// ---------- 4. 加载所有赛季 ----------
 async function loadAllSeasons() {
     contentArea.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载全部数据...</div>`;
 
     try {
-        // 清空旧数据
         state.allData = {};
         let total = 0;
+        let errorSeasons = [];
 
-        // 逐个加载所有赛季
         for (const season of state.allSeasons) {
             try {
                 const url = `data/${season}.json`;
                 const res = await fetch(url);
-                if (res.ok) {
-                    const data = await res.json();
-                    state.allData[season] = data.events || [];
-                    total += state.allData[season].length;
+                const text = await res.text();
+
+                if (text.trim().startsWith('<')) {
+                    errorSeasons.push(season);
+                    state.allData[season] = [];
+                    continue;
                 }
+
+                const data = JSON.parse(text);
+                state.allData[season] = data.events || [];
+                total += state.allData[season].length;
             } catch (e) {
-                console.warn(`⚠️ 加载 ${season} 失败:`, e);
+                errorSeasons.push(season);
                 state.allData[season] = [];
             }
         }
 
         state.page = 1;
         renderEvents();
+
+        // 显示错误提示
+        if (errorSeasons.length > 0) {
+            const errorMsg = document.createElement('div');
+            errorMsg.style.cssText = `
+                background: #fce9e6; color: #b3412a; 
+                padding: 0.8rem 1.2rem; border-radius: 12px; 
+                margin-bottom: 1rem; font-size: 0.9rem;
+                border-left: 4px solid #b3412a;
+            `;
+            errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ⚠️ 以下赛季文件不存在或格式错误: ${errorSeasons.join('、')}`;
+            contentArea.prepend(errorMsg);
+        }
+
         console.log(`✅ 全部加载完成，共 ${total} 条数据`);
     } catch (err) {
         contentArea.innerHTML = `<div class="empty">❌ 加载全部失败: ${err.message}</div>`;
     }
 }
 
-// ---------- 5. 获取当前显示的数据 ----------
+// ---------- 5. 获取当前数据 ----------
 function getCurrentEvents() {
     let events = [];
 
     if (state.currentSeason === 'all') {
-        // 全部赛季：合并所有数据
         for (const season of state.allSeasons) {
             const seasonEvents = state.allData[season] || [];
-            // 给每条数据打上赛季标签
             seasonEvents.forEach(e => {
                 events.push({ ...e, _season: season });
             });
         }
     } else {
-        // 单个赛季
         events = state.allData[state.currentSeason] || [];
         events = events.map(e => ({ ...e, _season: state.currentSeason }));
     }
 
-    // 按类型筛选
     if (state.currentType !== 'all') {
         events = events.filter(e => e.type === state.currentType);
     }
 
-    // 按日期排序（最新在前）
     events.sort((a, b) => (a.date > b.date ? -1 : 1));
-
     return events;
 }
 
-// ---------- 6. 渲染事件列表（分页） ----------
+// ---------- 6. 渲染 ----------
 function renderEvents() {
     const events = getCurrentEvents();
     const total = events.length;
@@ -159,20 +189,22 @@ function renderEvents() {
     const end = Math.min(start + state.pageSize, total);
     const pageData = events.slice(start, end);
 
-    // 更新计数
     if (resultCount) {
         const seasonLabel = state.currentSeason === 'all' ? '全部赛季' : state.currentSeason;
         resultCount.textContent = `${total} 项 (${seasonLabel} · 第 ${state.page}/${totalPages} 页)`;
     }
 
-    // 空状态
     if (total === 0) {
+        // 如果已有错误提示，保留它
+        const existingError = contentArea.querySelector('.error-banner');
         contentArea.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
+        if (existingError) {
+            contentArea.prepend(existingError);
+        }
         renderPagination(totalPages);
         return;
     }
 
-    // 按赛季分组（全部模式下按赛季分组）
     const groups = {};
     pageData.forEach(e => {
         const season = e._season || '未分类';
@@ -227,7 +259,7 @@ function renderEvents() {
     renderPagination(totalPages);
 }
 
-// ---------- 7. 渲染分页控件 ----------
+// ---------- 7. 分页 ----------
 function renderPagination(totalPages) {
     if (!paginationContainer) return;
     if (totalPages <= 1) {
@@ -277,7 +309,7 @@ function renderPagination(totalPages) {
     });
 }
 
-// ---------- 8. 绑定筛选事件 ----------
+// ---------- 8. 绑定事件 ----------
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function () {
         document.querySelectorAll('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
@@ -299,6 +331,6 @@ document.querySelectorAll('.view-btn').forEach(el => {
 
 // ---------- 9. 启动 ----------
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('📄 启动（分页版 + 修复全部）...');
+    console.log('📄 启动...');
     loadSeasonList();
 });
