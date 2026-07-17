@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 根目录JSON + 标签筛选 + 分页
+// 根目录JSON + 标签筛选（修复版）+ 分页
 // ============================================================
 
 // ---------- 状态 ----------
@@ -11,7 +11,8 @@ const state = {
     page: 1,
     pageSize: 15,
     allData: {},
-    seasons: []
+    seasons: [],
+    selectedTags: []  // 新增：存储选中的标签
 };
 
 // ---------- DOM 缓存 ----------
@@ -24,10 +25,9 @@ const dom = {
 };
 
 // ---------- 工具函数 ----------
-const $ = (sel, parent = document) => parent.querySelector(sel);
 const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
 
-// ---------- 1. 加载数据 ----------
+// ---------- 1. 加载赛季列表 ----------
 async function loadSeasonList() {
     try {
         const res = await fetch('index.json');
@@ -110,12 +110,21 @@ function getAllEvents() {
     } else {
         (state.allData[state.season] || []).forEach(e => events.push({ ...e, _season: state.season }));
     }
-    if (state.type !== 'all') events = events.filter(e => e.type === state.type);
-    // 标签筛选
-    const activeTags = $$('.tag-btn.active').map(el => el.dataset.tag);
-    if (activeTags.length) {
-        events = events.filter(e => e.tags && activeTags.every(t => e.tags.includes(t)));
+    
+    // 类型筛选
+    if (state.type !== 'all') {
+        events = events.filter(e => e.type === state.type);
     }
+    
+    // ✅ 标签筛选（修复版）
+    if (state.selectedTags.length > 0) {
+        events = events.filter(e => {
+            if (!e.tags || !Array.isArray(e.tags)) return false;
+            // 必须包含所有选中的标签（AND 逻辑）
+            return state.selectedTags.every(tag => e.tags.includes(tag));
+        });
+    }
+    
     events.sort((a, b) => (a.date > b.date ? -1 : 1));
     return events;
 }
@@ -123,23 +132,48 @@ function getAllEvents() {
 // ---------- 6. 渲染标签 ----------
 function renderTags(events) {
     if (!dom.tagContainer) return;
+    
+    // 统计标签
     const counts = {};
     events.forEach(e => {
-        if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
+        if (e.tags) {
+            e.tags.forEach(t => {
+                counts[t] = (counts[t] || 0) + 1;
+            });
+        }
     });
+    
     const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    
     if (!sorted.length) {
         dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
         return;
     }
-    dom.tagContainer.innerHTML = sorted.map(t =>
-        `<span class="filter-tag tag-btn" data-tag="${t}">${t} (${counts[t]})</span>`
-    ).join('');
+    
+    // ✅ 渲染标签，高亮选中的
+    dom.tagContainer.innerHTML = sorted.map(t => {
+        const active = state.selectedTags.includes(t) ? 'active' : '';
+        return `<span class="filter-tag tag-btn ${active}" data-tag="${t}">${t} (${counts[t]})</span>`;
+    }).join('');
+    
+    // ✅ 重新绑定标签点击事件
     dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
-        el.addEventListener('click', function() {
-            this.classList.toggle('active');
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tag = this.dataset.tag;
+            const index = state.selectedTags.indexOf(tag);
+            
+            // 切换选中状态
+            if (index > -1) {
+                state.selectedTags.splice(index, 1);
+                this.classList.remove('active');
+            } else {
+                state.selectedTags.push(tag);
+                this.classList.add('active');
+            }
+            
             state.page = 1;
-            render();
+            render();  // 重新渲染
         });
     });
 }
@@ -154,8 +188,11 @@ function render() {
     const start = (state.page - 1) * state.pageSize;
     const pageData = events.slice(start, start + state.pageSize);
 
-    dom.count.textContent = `${total} 项 (${state.season === 'all' ? '全部赛季' : state.season} · ${state.page}/${totalPages} 页)`;
+    // 更新计数
+    const tagLabel = state.selectedTags.length ? ` [标签: ${state.selectedTags.join('+')}]` : '';
+    dom.count.textContent = `${total} 项 (${state.season === 'all' ? '全部赛季' : state.season}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
+    // 先渲染标签（基于当前数据）
     renderTags(events);
 
     if (!total) {
@@ -187,12 +224,15 @@ function render() {
 function renderList(items) {
     let html = `<div class="event-list">`;
     items.forEach(e => {
+        // 显示标签
+        const tagsHtml = (e.tags || []).map(t => `<span class="mini-tag">${t}</span>`).join('');
         html += `
             <div class="event-item">
                 <span class="event-date">${e.date || '日期待定'}</span>
                 <span class="event-type ${e.type || '其他'}">${e.type || '其他'}</span>
                 <span class="event-title">${e.title || '无标题'}</span>
                 ${e.result ? `<span class="event-result">${e.result}</span>` : ''}
+                <span class="event-tags">${tagsHtml}</span>
                 <span class="event-media">
                     ${e.photo ? `<a href="${e.photo}" target="_blank"><i class="fas fa-camera"></i></a>` : ''}
                     ${e.video ? `<a href="${e.video}" target="_blank"><i class="fas fa-video"></i></a>` : ''}
@@ -206,12 +246,14 @@ function renderList(items) {
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     items.forEach(e => {
+        const tagsHtml = (e.tags || []).map(t => `<span class="mini-tag">${t}</span>`).join('');
         html += `
             <div class="event-card">
                 <div class="date">${e.date || '日期待定'}</div>
                 <div class="title">${e.title || '无标题'}</div>
                 <span class="type ${e.type || '其他'}">${e.type || '其他'}</span>
                 ${e.result ? `<div class="result">${e.result}</div>` : ''}
+                <div class="event-tags">${tagsHtml}</div>
                 <div class="media-links">
                     ${e.photo ? `<a href="${e.photo}" target="_blank"><i class="fas fa-camera"></i> 照片</a>` : ''}
                     ${e.video ? `<a href="${e.video}" target="_blank"><i class="fas fa-video"></i> 视频</a>` : ''}
@@ -292,6 +334,6 @@ document.querySelectorAll('.view-btn').forEach(el => {
 
 // ---------- 12. 启动 ----------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 启动（根目录版）...');
+    console.log('📄 启动（标签筛选修复版）...');
     loadSeasonList();
 });
