@@ -1,336 +1,297 @@
 // ============================================================
-// 羽生结弦资料库 - 修复加载失败时清空数据的问题
+// Simen Hegstad Krüger · 资料库
+// 根目录JSON + 标签筛选 + 分页
 // ============================================================
 
 // ---------- 状态 ----------
-let state = {
-    currentSeason: 'all',
-    currentType: 'all',
-    currentView: 'list',
-    allData: {},
-    allSeasons: [],
+const state = {
+    season: 'all',
+    type: 'all',
+    view: 'list',
     page: 1,
-    pageSize: 15
+    pageSize: 15,
+    allData: {},
+    seasons: []
 };
 
-// ---------- DOM 引用 ----------
-const $ = (id) => document.getElementById(id);
-const contentArea = $('content-area');
-const resultCount = $('result-count');
-const seasonContainer = $('season-tags-container');
-const paginationContainer = $('pagination-container');
+// ---------- DOM 缓存 ----------
+const dom = {
+    content: document.getElementById('content-area'),
+    count: document.getElementById('result-count'),
+    seasonContainer: document.getElementById('season-tags-container'),
+    tagContainer: document.getElementById('tag-container'),
+    pagination: document.getElementById('pagination-container')
+};
 
-// ---------- 1. 加载赛季列表 ----------
+// ---------- 工具函数 ----------
+const $ = (sel, parent = document) => parent.querySelector(sel);
+const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
+
+// ---------- 1. 加载数据 ----------
 async function loadSeasonList() {
     try {
         const res = await fetch('index.json');
         if (!res.ok) throw new Error('index.json 不存在');
         const data = await res.json();
-        state.allSeasons = data.seasons || [];
+        state.seasons = data.seasons || [];
         renderSeasonTags();
         await loadAllSeasons();
     } catch (err) {
-        contentArea.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
+        dom.content.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
     }
 }
 
 // ---------- 2. 渲染赛季按钮 ----------
 function renderSeasonTags() {
-    if (!seasonContainer) return;
-    let html = '';
-    const allActive = state.currentSeason === 'all' ? 'active' : '';
-    html += `<span class="filter-tag ${allActive}" data-season="all">全部</span>`;
-    state.allSeasons.forEach(season => {
-        const active = state.currentSeason === season ? 'active' : '';
-        html += `<span class="filter-tag ${active}" data-season="${season}">${season}</span>`;
+    if (!dom.seasonContainer) return;
+    const seasons = state.seasons;
+    let html = `<span class="filter-tag active" data-season="all">全部</span>`;
+    seasons.forEach(s => {
+        html += `<span class="filter-tag" data-season="${s}">${s}</span>`;
     });
-    seasonContainer.innerHTML = html;
+    dom.seasonContainer.innerHTML = html;
 
-    seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(el => {
-        el.addEventListener('click', function () {
-            seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(b => b.classList.remove('active'));
+    dom.seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(el => {
+        el.addEventListener('click', async function() {
+            dom.seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-
-            const season = this.dataset.season;
-            state.currentSeason = season;
+            state.season = this.dataset.season;
             state.page = 1;
-
-            if (season === 'all') {
-                loadAllSeasons();
+            if (state.season === 'all') {
+                await loadAllSeasons();
             } else {
-                loadSeasonData(season);
+                await loadSeason(state.season);
             }
         });
     });
 }
 
 // ---------- 3. 加载单个赛季 ----------
-async function loadSeasonData(season) {
-    contentArea.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载 ${season} 数据...</div>`;
-
+async function loadSeason(season) {
+    dom.content.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载 ${season}...</div>`;
     try {
-        const url = `data/${season}.json`;
-        const res = await fetch(url);
-
-        // 检查是否返回 HTML（404 页面）
+        const res = await fetch(`${season}.json`);
         const text = await res.text();
-        if (text.trim().startsWith('<')) {
-            throw new Error(`${season}.json 不存在（返回了 HTML 页面）`);
-        }
-
+        if (text.trim().startsWith('<')) throw new Error('文件不存在');
         const data = JSON.parse(text);
         state.allData[season] = data.events || [];
-        state.page = 1;
-        renderEvents();
-
+        render();
     } catch (err) {
-        console.error(`❌ 加载 ${season} 失败:`, err);
-        // ⚠️ 关键修复：加载失败时，保留旧数据，显示错误提示
         state.allData[season] = [];
-        renderEvents();
-        // 在内容区顶部显示错误
-        const errorEl = document.createElement('div');
-        errorEl.style.cssText = `
-            background: #fce9e6; color: #b3412a; 
-            padding: 0.8rem 1.2rem; border-radius: 12px; 
-            margin-bottom: 1rem; font-size: 0.9rem;
-            border-left: 4px solid #b3412a;
-        `;
-        errorEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ⚠️ 加载 ${season} 失败: ${err.message}，请检查文件是否存在`;
-        // 插入到内容区最前面
-        contentArea.prepend(errorEl);
+        render();
+        showError(`⚠️ 加载 ${season} 失败: ${err.message}`);
     }
 }
 
 // ---------- 4. 加载所有赛季 ----------
 async function loadAllSeasons() {
-    contentArea.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载全部数据...</div>`;
-
-    try {
-        state.allData = {};
-        let total = 0;
-        let errorSeasons = [];
-
-        for (const season of state.allSeasons) {
-            try {
-                const url = `data/${season}.json`;
-                const res = await fetch(url);
-                const text = await res.text();
-
-                if (text.trim().startsWith('<')) {
-                    errorSeasons.push(season);
-                    state.allData[season] = [];
-                    continue;
-                }
-
-                const data = JSON.parse(text);
-                state.allData[season] = data.events || [];
-                total += state.allData[season].length;
-            } catch (e) {
-                errorSeasons.push(season);
-                state.allData[season] = [];
-            }
-        }
-
-        state.page = 1;
-        renderEvents();
-
-        // 显示错误提示
-        if (errorSeasons.length > 0) {
-            const errorMsg = document.createElement('div');
-            errorMsg.style.cssText = `
-                background: #fce9e6; color: #b3412a; 
-                padding: 0.8rem 1.2rem; border-radius: 12px; 
-                margin-bottom: 1rem; font-size: 0.9rem;
-                border-left: 4px solid #b3412a;
-            `;
-            errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ⚠️ 以下赛季文件不存在或格式错误: ${errorSeasons.join('、')}`;
-            contentArea.prepend(errorMsg);
-        }
-
-        console.log(`✅ 全部加载完成，共 ${total} 条数据`);
-    } catch (err) {
-        contentArea.innerHTML = `<div class="empty">❌ 加载全部失败: ${err.message}</div>`;
+    dom.content.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载全部数据...</div>`;
+    state.allData = {};
+    let errors = [];
+    for (const season of state.seasons) {
+        try {
+            const res = await fetch(`${season}.json`);
+            const text = await res.text();
+            if (text.trim().startsWith('<')) { errors.push(season); continue; }
+            state.allData[season] = JSON.parse(text).events || [];
+        } catch { errors.push(season); }
     }
+    if (errors.length) showError(`⚠️ 以下文件不存在: ${errors.join('、')}`);
+    render();
 }
 
-// ---------- 5. 获取当前数据 ----------
-function getCurrentEvents() {
+// ---------- 5. 获取所有事件 ----------
+function getAllEvents() {
     let events = [];
-
-    if (state.currentSeason === 'all') {
-        for (const season of state.allSeasons) {
-            const seasonEvents = state.allData[season] || [];
-            seasonEvents.forEach(e => {
-                events.push({ ...e, _season: season });
-            });
-        }
+    if (state.season === 'all') {
+        state.seasons.forEach(s => {
+            (state.allData[s] || []).forEach(e => events.push({ ...e, _season: s }));
+        });
     } else {
-        events = state.allData[state.currentSeason] || [];
-        events = events.map(e => ({ ...e, _season: state.currentSeason }));
+        (state.allData[state.season] || []).forEach(e => events.push({ ...e, _season: state.season }));
     }
-
-    if (state.currentType !== 'all') {
-        events = events.filter(e => e.type === state.currentType);
+    if (state.type !== 'all') events = events.filter(e => e.type === state.type);
+    // 标签筛选
+    const activeTags = $$('.tag-btn.active').map(el => el.dataset.tag);
+    if (activeTags.length) {
+        events = events.filter(e => e.tags && activeTags.every(t => e.tags.includes(t)));
     }
-
     events.sort((a, b) => (a.date > b.date ? -1 : 1));
     return events;
 }
 
-// ---------- 6. 渲染 ----------
-function renderEvents() {
-    const events = getCurrentEvents();
+// ---------- 6. 渲染标签 ----------
+function renderTags(events) {
+    if (!dom.tagContainer) return;
+    const counts = {};
+    events.forEach(e => {
+        if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
+    });
+    const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    if (!sorted.length) {
+        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
+        return;
+    }
+    dom.tagContainer.innerHTML = sorted.map(t =>
+        `<span class="filter-tag tag-btn" data-tag="${t}">${t} (${counts[t]})</span>`
+    ).join('');
+    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
+        el.addEventListener('click', function() {
+            this.classList.toggle('active');
+            state.page = 1;
+            render();
+        });
+    });
+}
+
+// ---------- 7. 主渲染 ----------
+function render() {
+    const events = getAllEvents();
     const total = events.length;
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.page > totalPages) state.page = totalPages;
 
     const start = (state.page - 1) * state.pageSize;
-    const end = Math.min(start + state.pageSize, total);
-    const pageData = events.slice(start, end);
+    const pageData = events.slice(start, start + state.pageSize);
 
-    if (resultCount) {
-        const seasonLabel = state.currentSeason === 'all' ? '全部赛季' : state.currentSeason;
-        resultCount.textContent = `${total} 项 (${seasonLabel} · 第 ${state.page}/${totalPages} 页)`;
-    }
+    dom.count.textContent = `${total} 项 (${state.season === 'all' ? '全部赛季' : state.season} · ${state.page}/${totalPages} 页)`;
 
-    if (total === 0) {
-        // 如果已有错误提示，保留它
-        const existingError = contentArea.querySelector('.error-banner');
-        contentArea.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
-        if (existingError) {
-            contentArea.prepend(existingError);
-        }
+    renderTags(events);
+
+    if (!total) {
+        dom.content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
         renderPagination(totalPages);
         return;
     }
 
+    // 分组
     const groups = {};
     pageData.forEach(e => {
-        const season = e._season || '未分类';
-        if (!groups[season]) groups[season] = [];
-        groups[season].push(e);
+        const s = e._season || '未分类';
+        if (!groups[s]) groups[s] = [];
+        groups[s].push(e);
     });
 
     let html = '';
-    for (const [season, seasonEvents] of Object.entries(groups)) {
+    for (const [season, items] of Object.entries(groups)) {
         html += `<div class="season-group">`;
-        html += `<div class="season-title"><i class="fas fa-trophy"></i> ${season} <span class="count">${seasonEvents.length} 项</span></div>`;
-
-        if (state.currentView === 'list') {
-            html += `<div class="event-list">`;
-            seasonEvents.forEach(e => {
-                html += `
-                    <div class="event-item">
-                        <span class="event-date">${e.date || '日期待定'}</span>
-                        <span class="event-type ${e.type || '其他'}">${e.type || '其他'}</span>
-                        <span class="event-title">${e.title || '无标题'}</span>
-                        ${e.result ? `<span class="event-result">${e.result}</span>` : ''}
-                        <span class="event-media">
-                            ${e.photo ? `<a href="${e.photo}" target="_blank"><i class="fas fa-camera"></i></a>` : ''}
-                            ${e.video ? `<a href="${e.video}" target="_blank"><i class="fas fa-video"></i></a>` : ''}
-                        </span>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        } else {
-            html += `<div class="event-grid">`;
-            seasonEvents.forEach(e => {
-                html += `
-                    <div class="event-card">
-                        <div class="date">${e.date || '日期待定'}</div>
-                        <div class="title">${e.title || '无标题'}</div>
-                        <span class="type ${e.type || '其他'}">${e.type || '其他'}</span>
-                        ${e.result ? `<div class="result">${e.result}</div>` : ''}
-                        <div class="media-links">
-                            ${e.photo ? `<a href="${e.photo}" target="_blank"><i class="fas fa-camera"></i> 照片</a>` : ''}
-                            ${e.video ? `<a href="${e.video}" target="_blank"><i class="fas fa-video"></i> 视频</a>` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        }
+        html += `<div class="season-title"><i class="fas fa-trophy"></i> ${season} <span class="count">${items.length} 项</span></div>`;
+        html += state.view === 'list' ? renderList(items) : renderGrid(items);
         html += `</div>`;
     }
-
-    contentArea.innerHTML = html;
+    dom.content.innerHTML = html;
     renderPagination(totalPages);
 }
 
-// ---------- 7. 分页 ----------
+// ---------- 8. 列表/卡片渲染 ----------
+function renderList(items) {
+    let html = `<div class="event-list">`;
+    items.forEach(e => {
+        html += `
+            <div class="event-item">
+                <span class="event-date">${e.date || '日期待定'}</span>
+                <span class="event-type ${e.type || '其他'}">${e.type || '其他'}</span>
+                <span class="event-title">${e.title || '无标题'}</span>
+                ${e.result ? `<span class="event-result">${e.result}</span>` : ''}
+                <span class="event-media">
+                    ${e.photo ? `<a href="${e.photo}" target="_blank"><i class="fas fa-camera"></i></a>` : ''}
+                    ${e.video ? `<a href="${e.video}" target="_blank"><i class="fas fa-video"></i></a>` : ''}
+                </span>
+            </div>
+        `;
+    });
+    return html + `</div>`;
+}
+
+function renderGrid(items) {
+    let html = `<div class="event-grid">`;
+    items.forEach(e => {
+        html += `
+            <div class="event-card">
+                <div class="date">${e.date || '日期待定'}</div>
+                <div class="title">${e.title || '无标题'}</div>
+                <span class="type ${e.type || '其他'}">${e.type || '其他'}</span>
+                ${e.result ? `<div class="result">${e.result}</div>` : ''}
+                <div class="media-links">
+                    ${e.photo ? `<a href="${e.photo}" target="_blank"><i class="fas fa-camera"></i> 照片</a>` : ''}
+                    ${e.video ? `<a href="${e.video}" target="_blank"><i class="fas fa-video"></i> 视频</a>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    return html + `</div>`;
+}
+
+// ---------- 9. 分页 ----------
 function renderPagination(totalPages) {
-    if (!paginationContainer) return;
-    if (totalPages <= 1) {
-        paginationContainer.innerHTML = '';
+    if (!dom.pagination || totalPages <= 1) {
+        dom.pagination.innerHTML = '';
         return;
     }
-
     const { page } = state;
     let html = `<div class="pagination">`;
     html += `<button class="page-btn" data-page="prev" ${page <= 1 ? 'disabled' : ''}>上一页</button>`;
-
-    let startPage = Math.max(1, page - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-    if (startPage > 1) {
+    let start = Math.max(1, page - 2), end = Math.min(totalPages, start + 4);
+    if (end - start < 4) start = Math.max(1, end - 4);
+    if (start > 1) {
         html += `<button class="page-btn" data-page="1">1</button>`;
-        if (startPage > 2) html += `<span class="page-ellipsis">…</span>`;
+        if (start > 2) html += `<span class="page-ellipsis">…</span>`;
     }
-
-    for (let i = startPage; i <= endPage; i++) {
+    for (let i = start; i <= end; i++) {
         html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}">${i}</button>`;
     }
-
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) html += `<span class="page-ellipsis">…</span>`;
+    if (end < totalPages) {
+        if (end < totalPages - 1) html += `<span class="page-ellipsis">…</span>`;
         html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
     }
-
     html += `<button class="page-btn" data-page="next" ${page >= totalPages ? 'disabled' : ''}>下一页</button>`;
     html += `</div>`;
+    dom.pagination.innerHTML = html;
 
-    paginationContainer.innerHTML = html;
-
-    paginationContainer.querySelectorAll('.page-btn').forEach(el => {
-        el.addEventListener('click', function () {
+    dom.pagination.querySelectorAll('.page-btn').forEach(el => {
+        el.addEventListener('click', function() {
             const target = this.dataset.page;
-            if (target === 'prev' && state.page > 1) {
-                state.page--;
-            } else if (target === 'next' && state.page < totalPages) {
-                state.page++;
-            } else if (!isNaN(target)) {
-                state.page = parseInt(target);
-            }
-            renderEvents();
+            if (target === 'prev' && state.page > 1) state.page--;
+            else if (target === 'next' && state.page < totalPages) state.page++;
+            else if (!isNaN(target)) state.page = +target;
+            render();
         });
     });
 }
 
-// ---------- 8. 绑定事件 ----------
+// ---------- 10. 错误提示 ----------
+function showError(msg) {
+    const old = dom.content.querySelector('.error-banner');
+    if (old) old.remove();
+    const el = document.createElement('div');
+    el.className = 'error-banner';
+    el.style.cssText = 'background:#fce9e6;color:#b3412a;padding:0.8rem 1.2rem;border-radius:12px;margin-bottom:1rem;border-left:4px solid #b3412a;';
+    el.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${msg}`;
+    dom.content.prepend(el);
+}
+
+// ---------- 11. 绑定事件 ----------
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
-    el.addEventListener('click', function () {
-        document.querySelectorAll('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
+    el.addEventListener('click', function() {
+        $$('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        state.currentType = this.dataset.filter;
+        state.type = this.dataset.filter;
         state.page = 1;
-        renderEvents();
+        render();
     });
 });
 
 document.querySelectorAll('.view-btn').forEach(el => {
-    el.addEventListener('click', function () {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    el.addEventListener('click', function() {
+        $$('.view-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        state.currentView = this.dataset.view;
-        renderEvents();
+        state.view = this.dataset.view;
+        render();
     });
 });
 
-// ---------- 9. 启动 ----------
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('📄 启动...');
+// ---------- 12. 启动 ----------
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 启动（根目录版）...');
     loadSeasonList();
 });
