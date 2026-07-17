@@ -465,8 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 
 function calculateCareerDays() {
-    const fisStart = new Date('2013-11-29');
-    const wcStart = new Date('2014-11-28');
+    const fisStart = new Date('2010-02-12');
+    const wcStart = new Date('2013-03-16');
     const now = new Date();
 
     // 计算天数
