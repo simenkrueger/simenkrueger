@@ -363,42 +363,4 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateCareerDays();
     setInterval(calculateCareerDays, 60000);
 });
-// ============================================================
-// 生涯天数计算器（支持本地时区）
-// ============================================================
 
-function calculateCareerDays() {
-    // 1. 使用本地时区解析日期（避免 UTC 偏移）
-    function parseLocalDate(dateStr) {
-        const parts = dateStr.split('-').map(Number);
-        return new Date(parts[0], parts[1] - 1, parts[2]);
-    }
-    
-    const fisStart = parseLocalDate('2010-02-12';
-    const wcStart = parseLocalDate('2013-03-16');
-    const now = new Date();
-    
-    // 2. 重置时间为当天 00:00:00（精确到天）
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const fisStartDay = new Date(fisStart.getFullYear(), fisStart.getMonth(), fisStart.getDate());
-    const wcStartDay = new Date(wcStart.getFullYear(), wcStart.getMonth(), wcStart.getDate());
-    
-    // 3. 计算天数（+1 包含当天）
-    const fisDays = Math.floor((today - fisStartDay) / (1000 * 60 * 60 * 24));
-    const wcDays = Math.floor((today - wcStartDay) / (1000 * 60 * 60 * 24));
-    
-    // 4. 更新显示
-    const fisEl = document.getElementById('fis-days');
-    const wcEl = document.getElementById('wc-days');
-    
-    if (fisEl) {
-        fisEl.innerHTML = `${fisDays.toLocaleString()} <span class="days-suffix">天</span>`;
-    }
-    if (wcEl) {
-        wcEl.innerHTML = `${wcDays.toLocaleString()} <span class="days-suffix">天</span>`;
-    }
-}
-
-// 每分钟刷新一次
-document.addEventListener('DOMContentLoaded', calculateCareerDays);
-setInterval(calculateCareerDays, 60000);
