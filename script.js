@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 反向索引优化版 - 标签筛选 < 1ms
+// 修复版：标签筛选 + 反向索引 + 底部统计
 // ============================================================
 
 // ---------- 全局状态 ----------
@@ -12,16 +12,11 @@ const state = {
     pageSize: 15,
     seasons: [],
     selectedTags: [],
-    // 原始数据
-    rawData: {},           // { '2025-2026': [...], ... }
-    // 反向索引
-    tagIndex: {},          // { '金牌': [id1, id2], '自由式': [id3, id4] }
-    // ID → 事件映射
-    eventMap: {},          // { 1: { ...event }, 2: { ...event } }
-    // 所有事件ID列表（按赛季/类型预分组）
+    tagIndex: {},
+    eventMap: {},
     allIds: [],
-    seasonIds: {},         // { '2025-2026': [id1, id2], ... }
-    typeIds: {},           // { '世界杯': [id1, id2], ... }
+    seasonIds: {},
+    typeIds: {},
     totalPages: 1
 };
 
@@ -38,7 +33,12 @@ const dom = {
 // ---------- 常量 ----------
 const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
 
-// ---------- 1. 加载数据 ----------
+// ---------- 工具函数 ----------
+const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
+
+// ============================================================
+// 1. 加载所有数据
+// ============================================================
 async function loadAllData() {
     dom.content.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载数据中...</div>`;
     const startTime = performance.now();
@@ -49,7 +49,6 @@ async function loadAllData() {
         const indexData = await indexRes.json();
         state.seasons = indexData.seasons || [];
 
-        // 并行加载所有赛季
         const results = await Promise.all(state.seasons.map(async (season) => {
             try {
                 const res = await fetch(`${season}.json`);
@@ -69,7 +68,6 @@ async function loadAllData() {
         const allIds = [];
         const seasonIds = {};
         const typeIds = {};
-
         let idCounter = 0;
 
         results.forEach(({ season, events }) => {
@@ -78,20 +76,18 @@ async function loadAllData() {
                 idCounter++;
                 const id = idCounter;
                 const eventWithSeason = { ...e, id, _season: season };
-                
-                // 存入映射
+
                 eventMap[id] = eventWithSeason;
                 allIds.push(id);
                 seasonIdList.push(id);
 
-                // 按类型索引
                 const type = e.type || '其他';
                 if (!typeIds[type]) typeIds[type] = [];
                 typeIds[type].push(id);
 
-                // 按标签索引（关键！）
                 if (e.tags) {
                     e.tags.forEach(tag => {
+                        if (EXCLUDED_TYPES.includes(tag)) return;
                         if (!tagIndex[tag]) tagIndex[tag] = [];
                         tagIndex[tag].push(id);
                     });
@@ -100,17 +96,16 @@ async function loadAllData() {
             seasonIds[season] = seasonIdList;
         });
 
-        state.rawData = results.reduce((acc, { season, events }) => {
-            acc[season] = events;
-            return acc;
-        }, {});
         state.tagIndex = tagIndex;
         state.eventMap = eventMap;
         state.allIds = allIds;
         state.seasonIds = seasonIds;
         state.typeIds = typeIds;
 
-        // 渲染
+        console.log('📊 标签索引:', Object.keys(tagIndex));
+        console.log('📊 标签数量:', Object.keys(tagIndex).length);
+
+        // ---------- 渲染 ----------
         renderSeasonTags();
         renderTagFilters();
         render();
@@ -124,28 +119,78 @@ async function loadAllData() {
     }
 }
 
-// ---------- 2. 获取数据（使用索引，极快） ----------
+// ============================================================
+// 2. 渲染标签筛选器
+// ============================================================
+function renderTagFilters() {
+    console.log('🔄 渲染标签筛选器...');
+
+    if (!dom.tagContainer) {
+        console.error('❌ dom.tagContainer 不存在！');
+        return;
+    }
+
+    const tagIndex = state.tagIndex || {};
+    const tagKeys = Object.keys(tagIndex);
+
+    console.log(`📊 找到 ${tagKeys.length} 个标签`);
+
+    if (tagKeys.length === 0) {
+        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
+        return;
+    }
+
+    const sortedTags = tagKeys.sort((a, b) => tagIndex[b].length - tagIndex[a].length);
+
+    let html = '';
+    sortedTags.forEach(tag => {
+        const count = tagIndex[tag].length;
+        const active = state.selectedTags.includes(tag) ? 'active' : '';
+        html += `<span class="filter-tag tag-btn ${active}" data-tag="${tag}">${tag} (${count})</span>`;
+    });
+
+    dom.tagContainer.innerHTML = html;
+
+    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
+        el.addEventListener('click', function() {
+            const tag = this.dataset.tag;
+            const index = state.selectedTags.indexOf(tag);
+
+            if (index > -1) {
+                state.selectedTags.splice(index, 1);
+                this.classList.remove('active');
+            } else {
+                state.selectedTags.push(tag);
+                this.classList.add('active');
+            }
+
+            state.page = 1;
+            render();
+        });
+    });
+
+    console.log('✅ 标签渲染完成');
+}
+
+// ============================================================
+// 3. 获取筛选后的 ID 列表
+// ============================================================
 function getFilteredIds() {
     let ids = [];
 
-    // 1. 按赛季筛选
     if (state.season === 'all') {
         ids = [...state.allIds];
     } else {
         ids = state.seasonIds[state.season] || [];
     }
 
-    // 2. 按类型筛选
     if (state.type !== 'all') {
         const typeIdSet = new Set(state.typeIds[state.type] || []);
         ids = ids.filter(id => typeIdSet.has(id));
     }
 
-    // 3. 按标签筛选（使用反向索引，O(1)）
     if (state.selectedTags.length > 0) {
-        // 取第一个标签的ID列表
         let tagIds = state.tagIndex[state.selectedTags[0]] || [];
-        // 与其他标签取交集
         for (let i = 1; i < state.selectedTags.length; i++) {
             const tag = state.selectedTags[i];
             const tagIdSet = new Set(state.tagIndex[tag] || []);
@@ -159,71 +204,22 @@ function getFilteredIds() {
     return ids;
 }
 
-// ---------- 3. 获取事件对象 ----------
-function getEventsByIds(ids) {
-    return ids.map(id => state.eventMap[id]).filter(Boolean);
-}
-
-// ---------- 4. 渲染标签筛选器 ----------
-function renderTagFilters() {
-    if (!dom.tagContainer) return;
-
-    const tagCounts = {};
-    Object.keys(state.tagIndex).forEach(tag => {
-        if (EXCLUDED_TYPES.includes(tag)) return;
-        tagCounts[tag] = state.tagIndex[tag].length;
-    });
-
-    const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
-
-    if (sortedTags.length === 0) {
-        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
-        return;
-    }
-
-    let html = '';
-    sortedTags.forEach(tag => {
-        const active = state.selectedTags.includes(tag) ? 'active' : '';
-        html += `<span class="filter-tag tag-btn ${active}" data-tag="${tag}">${tag} (${tagCounts[tag]})</span>`;
-    });
-    dom.tagContainer.innerHTML = html;
-
-    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
-        el.addEventListener('click', function() {
-            const tag = this.dataset.tag;
-            const index = state.selectedTags.indexOf(tag);
-            
-            if (index > -1) {
-                state.selectedTags.splice(index, 1);
-                this.classList.remove('active');
-            } else {
-                state.selectedTags.push(tag);
-                this.classList.add('active');
-            }
-            
-            state.page = 1;
-            render();
-        });
-    });
-}
-
-// ---------- 5. 渲染主内容 ----------
+// ============================================================
+// 4. 渲染主内容
+// ============================================================
 function render() {
     const renderStart = performance.now();
 
-    // 获取ID列表（极快，< 1ms）
     const ids = getFilteredIds();
     const total = ids.length;
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.page > totalPages) state.page = totalPages;
     state.totalPages = totalPages;
 
-    // 分页
     const start = (state.page - 1) * state.pageSize;
     const pageIds = ids.slice(start, start + state.pageSize);
-    const pageData = getEventsByIds(pageIds);
+    const pageData = pageIds.map(id => state.eventMap[id]).filter(Boolean);
 
-    // 更新计数
     const seasonLabel = state.season === 'all' ? '全部赛季' : state.season;
     const tagLabel = state.selectedTags.length ? ` [${state.selectedTags.join('+')}]` : '';
     dom.count.textContent = `${total} 项 (${seasonLabel}${tagLabel} · ${state.page}/${totalPages} 页)`;
@@ -235,7 +231,6 @@ function render() {
         return;
     }
 
-    // 按赛季分组
     const groups = {};
     pageData.forEach(e => {
         const s = e._season || '未分类';
@@ -258,15 +253,9 @@ function render() {
     });
 }
 
-// ---------- 6. 更新渲染时间 ----------
-function updateRenderTime(startTime) {
-    const elapsed = (performance.now() - startTime).toFixed(0);
-    if (dom.renderTime) {
-        dom.renderTime.textContent = `⏱️ 渲染 ${elapsed}ms`;
-    }
-}
-
-// ---------- 7. 列表渲染 ----------
+// ============================================================
+// 5. 列表渲染
+// ============================================================
 function renderList(items) {
     let html = `<div class="event-list">`;
     for (const e of items) {
@@ -297,7 +286,9 @@ function renderList(items) {
     return html + `</div>`;
 }
 
-// ---------- 8. 卡片渲染 ----------
+// ============================================================
+// 6. 卡片渲染
+// ============================================================
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     for (const e of items) {
@@ -328,7 +319,9 @@ function renderGrid(items) {
     return html + `</div>`;
 }
 
-// ---------- 9. 赛季按钮 ----------
+// ============================================================
+// 7. 赛季按钮
+// ============================================================
 function renderSeasonTags() {
     if (!dom.seasonContainer) return;
     let html = `<span class="filter-tag active" data-season="all">全部</span>`;
@@ -348,7 +341,9 @@ function renderSeasonTags() {
     });
 }
 
-// ---------- 10. 分页 ----------
+// ============================================================
+// 8. 分页
+// ============================================================
 function renderPagination() {
     if (!dom.pagination || state.totalPages <= 1) {
         dom.pagination.innerHTML = '';
@@ -393,7 +388,19 @@ function renderPagination() {
     });
 }
 
-// ---------- 11. 底部生涯统计 ----------
+// ============================================================
+// 9. 更新渲染时间
+// ============================================================
+function updateRenderTime(startTime) {
+    const elapsed = (performance.now() - startTime).toFixed(0);
+    if (dom.renderTime) {
+        dom.renderTime.textContent = `⏱️ 渲染 ${elapsed}ms`;
+    }
+}
+
+// ============================================================
+// 10. 底部生涯统计
+// ============================================================
 function calculateCareerDays() {
     function parseLocalDate(dateStr) {
         const parts = dateStr.split('-').map(Number);
@@ -420,10 +427,12 @@ function calculateCareerDays() {
     if (footerEl) footerEl.textContent = `FIS ${fisDays}天 · 世界杯 ${wcDays}天`;
 }
 
-// ---------- 12. 绑定事件 ----------
+// ============================================================
+// 11. 绑定事件
+// ============================================================
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
-        document.querySelectorAll('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
+        $$('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         state.type = this.dataset.filter;
         state.page = 1;
@@ -433,16 +442,18 @@ document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
 
 document.querySelectorAll('.view-btn').forEach(el => {
     el.addEventListener('click', function() {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        $$('.view-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         state.view = this.dataset.view;
         render();
     });
 });
 
-// ---------- 13. 启动 ----------
+// ============================================================
+// 12. 启动
+// ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 启动（反向索引版）...');
+    console.log('📄 启动（反向索引修复版）...');
     loadAllData();
     calculateCareerDays();
     setInterval(calculateCareerDays, 60000);
