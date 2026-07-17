@@ -1,9 +1,9 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 最快版本：预加载 + 纯内存操作
+// 修复版：标签筛选 + 反向索引 + 底部统计
 // ============================================================
 
-// ---------- 状态 ----------
+// ---------- 全局状态 ----------
 const state = {
     season: 'all',
     type: 'all',
@@ -11,24 +11,34 @@ const state = {
     page: 1,
     pageSize: 15,
     seasons: [],
-    allData: {},
     selectedTags: [],
+    tagIndex: {},
+    eventMap: {},
+    allIds: [],
+    seasonIds: {},
+    typeIds: {},
     totalPages: 1
 };
 
-// ---------- DOM ----------
+// ---------- DOM 缓存 ----------
 const dom = {
     content: document.getElementById('content-area'),
     count: document.getElementById('result-count'),
     seasonContainer: document.getElementById('season-tags-container'),
     tagContainer: document.getElementById('tag-container'),
-    pagination: document.getElementById('pagination-container')
+    pagination: document.getElementById('pagination-container'),
+    renderTime: document.getElementById('render-time')
 };
 
+// ---------- 常量 ----------
 const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
+
+// ---------- 工具函数 ----------
 const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
 
-// ---------- 1. 加载所有数据 ----------
+// ============================================================
+// 1. 加载所有数据
+// ============================================================
 async function loadAllData() {
     dom.content.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载数据中...</div>`;
     const startTime = performance.now();
@@ -52,17 +62,56 @@ async function loadAllData() {
             }
         }));
 
+        // ---------- 建立反向索引 ----------
+        const tagIndex = {};
+        const eventMap = {};
+        const allIds = [];
+        const seasonIds = {};
+        const typeIds = {};
+        let idCounter = 0;
+
         results.forEach(({ season, events }) => {
-            state.allData[season] = events;
+            const seasonIdList = [];
+            events.forEach(e => {
+                idCounter++;
+                const id = idCounter;
+                const eventWithSeason = { ...e, id, _season: season };
+
+                eventMap[id] = eventWithSeason;
+                allIds.push(id);
+                seasonIdList.push(id);
+
+                const type = e.type || '其他';
+                if (!typeIds[type]) typeIds[type] = [];
+                typeIds[type].push(id);
+
+                if (e.tags) {
+                    e.tags.forEach(tag => {
+                        if (EXCLUDED_TYPES.includes(tag)) return;
+                        if (!tagIndex[tag]) tagIndex[tag] = [];
+                        tagIndex[tag].push(id);
+                    });
+                }
+            });
+            seasonIds[season] = seasonIdList;
         });
 
+        state.tagIndex = tagIndex;
+        state.eventMap = eventMap;
+        state.allIds = allIds;
+        state.seasonIds = seasonIds;
+        state.typeIds = typeIds;
+
+        console.log('📊 标签索引:', Object.keys(tagIndex));
+        console.log('📊 标签数量:', Object.keys(tagIndex).length);
+
+        // ---------- 渲染 ----------
         renderSeasonTags();
         renderTagFilters();
         render();
 
-        const total = Object.values(state.allData).reduce((sum, arr) => sum + arr.length, 0);
         const elapsed = (performance.now() - startTime).toFixed(0);
-        console.log(`✅ 加载完成: ${total} 条数据, ${elapsed}ms`);
+        console.log(`✅ 加载完成: ${allIds.length} 条数据, ${elapsed}ms`);
 
     } catch (err) {
         dom.content.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
@@ -70,49 +119,106 @@ async function loadAllData() {
     }
 }
 
-// ---------- 2. 获取数据（纯内存） ----------
-function getEvents() {
-    let events = [];
+// ============================================================
+// 2. 渲染标签筛选器
+// ============================================================
+function renderTagFilters() {
+    console.log('🔄 渲染标签筛选器...');
+
+    if (!dom.tagContainer) {
+        console.error('❌ dom.tagContainer 不存在！');
+        return;
+    }
+
+    const tagIndex = state.tagIndex || {};
+    const tagKeys = Object.keys(tagIndex);
+
+    console.log(`📊 找到 ${tagKeys.length} 个标签`);
+
+    if (tagKeys.length === 0) {
+        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
+        return;
+    }
+
+    const sortedTags = tagKeys.sort((a, b) => tagIndex[b].length - tagIndex[a].length);
+
+    let html = '';
+    sortedTags.forEach(tag => {
+        const count = tagIndex[tag].length;
+        const active = state.selectedTags.includes(tag) ? 'active' : '';
+        html += `<span class="filter-tag tag-btn ${active}" data-tag="${tag}">${tag} (${count})</span>`;
+    });
+
+    dom.tagContainer.innerHTML = html;
+
+    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
+        el.addEventListener('click', function() {
+            const tag = this.dataset.tag;
+            const index = state.selectedTags.indexOf(tag);
+
+            if (index > -1) {
+                state.selectedTags.splice(index, 1);
+                this.classList.remove('active');
+            } else {
+                state.selectedTags.push(tag);
+                this.classList.add('active');
+            }
+
+            state.page = 1;
+            render();
+        });
+    });
+
+    console.log('✅ 标签渲染完成');
+}
+
+// ============================================================
+// 3. 获取筛选后的 ID 列表
+// ============================================================
+function getFilteredIds() {
+    let ids = [];
 
     if (state.season === 'all') {
-        state.seasons.forEach(s => {
-            (state.allData[s] || []).forEach(e => {
-                events.push({ ...e, _season: s });
-            });
-        });
+        ids = [...state.allIds];
     } else {
-        (state.allData[state.season] || []).forEach(e => {
-            events.push({ ...e, _season: state.season });
-        });
+        ids = state.seasonIds[state.season] || [];
     }
 
     if (state.type !== 'all') {
-        events = events.filter(e => e.type === state.type);
+        const typeIdSet = new Set(state.typeIds[state.type] || []);
+        ids = ids.filter(id => typeIdSet.has(id));
     }
 
     if (state.selectedTags.length > 0) {
-        events = events.filter(e => {
-            if (!e.tags) return false;
-            return state.selectedTags.every(tag => e.tags.includes(tag));
-        });
+        let tagIds = state.tagIndex[state.selectedTags[0]] || [];
+        for (let i = 1; i < state.selectedTags.length; i++) {
+            const tag = state.selectedTags[i];
+            const tagIdSet = new Set(state.tagIndex[tag] || []);
+            tagIds = tagIds.filter(id => tagIdSet.has(id));
+            if (tagIds.length === 0) break;
+        }
+        const tagIdSet = new Set(tagIds);
+        ids = ids.filter(id => tagIdSet.has(id));
     }
 
-    events.sort((a, b) => (a.date > b.date ? -1 : 1));
-    return events;
+    return ids;
 }
 
-// ---------- 3. 渲染 ----------
+// ============================================================
+// 4. 渲染主内容
+// ============================================================
 function render() {
     const renderStart = performance.now();
 
-    const events = getEvents();
-    const total = events.length;
+    const ids = getFilteredIds();
+    const total = ids.length;
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.page > totalPages) state.page = totalPages;
     state.totalPages = totalPages;
 
     const start = (state.page - 1) * state.pageSize;
-    const pageData = events.slice(start, start + state.pageSize);
+    const pageIds = ids.slice(start, start + state.pageSize);
+    const pageData = pageIds.map(id => state.eventMap[id]).filter(Boolean);
 
     const seasonLabel = state.season === 'all' ? '全部赛季' : state.season;
     const tagLabel = state.selectedTags.length ? ` [${state.selectedTags.join('+')}]` : '';
@@ -121,6 +227,7 @@ function render() {
     if (total === 0) {
         dom.content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
         renderPagination();
+        updateRenderTime(renderStart);
         return;
     }
 
@@ -139,16 +246,16 @@ function render() {
         html += `</div>`;
     }
 
-    dom.content.innerHTML = html;
-    renderPagination();
-
-    const elapsed = (performance.now() - renderStart).toFixed(0);
-    if (pageData.length > 0) {
-        console.log(`⚡ 渲染: ${pageData.length} 条, ${elapsed}ms`);
-    }
+    requestAnimationFrame(() => {
+        dom.content.innerHTML = html;
+        renderPagination();
+        updateRenderTime(renderStart);
+    });
 }
 
-// ---------- 4. 列表渲染 ----------
+// ============================================================
+// 5. 列表渲染
+// ============================================================
 function renderList(items) {
     let html = `<div class="event-list">`;
     for (const e of items) {
@@ -179,7 +286,9 @@ function renderList(items) {
     return html + `</div>`;
 }
 
-// ---------- 5. 卡片渲染 ----------
+// ============================================================
+// 6. 卡片渲染
+// ============================================================
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     for (const e of items) {
@@ -210,7 +319,9 @@ function renderGrid(items) {
     return html + `</div>`;
 }
 
-// ---------- 6. 赛季按钮 ----------
+// ============================================================
+// 7. 赛季按钮
+// ============================================================
 function renderSeasonTags() {
     if (!dom.seasonContainer) return;
     let html = `<span class="filter-tag active" data-season="all">全部</span>`;
@@ -230,54 +341,9 @@ function renderSeasonTags() {
     });
 }
 
-// ---------- 7. 标签按钮 ----------
-function renderTagFilters() {
-    if (!dom.tagContainer) return;
-
-    const tagCounts = {};
-    state.seasons.forEach(s => {
-        (state.allData[s] || []).forEach(e => {
-            if (e.tags) {
-                e.tags.forEach(tag => {
-                    if (EXCLUDED_TYPES.includes(tag)) return;
-                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                });
-            }
-        });
-    });
-
-    const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
-
-    if (sortedTags.length === 0) {
-        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
-        return;
-    }
-
-    let html = '';
-    sortedTags.forEach(tag => {
-        const active = state.selectedTags.includes(tag) ? 'active' : '';
-        html += `<span class="filter-tag tag-btn ${active}" data-tag="${tag}">${tag} (${tagCounts[tag]})</span>`;
-    });
-    dom.tagContainer.innerHTML = html;
-
-    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
-        el.addEventListener('click', function() {
-            const tag = this.dataset.tag;
-            const index = state.selectedTags.indexOf(tag);
-            if (index > -1) {
-                state.selectedTags.splice(index, 1);
-                this.classList.remove('active');
-            } else {
-                state.selectedTags.push(tag);
-                this.classList.add('active');
-            }
-            state.page = 1;
-            render();
-        });
-    });
-}
-
-// ---------- 8. 分页 ----------
+// ============================================================
+// 8. 分页
+// ============================================================
 function renderPagination() {
     if (!dom.pagination || state.totalPages <= 1) {
         dom.pagination.innerHTML = '';
@@ -322,7 +388,48 @@ function renderPagination() {
     });
 }
 
-// ---------- 9. 绑定事件 ----------
+// ============================================================
+// 9. 更新渲染时间
+// ============================================================
+function updateRenderTime(startTime) {
+    const elapsed = (performance.now() - startTime).toFixed(0);
+    if (dom.renderTime) {
+        dom.renderTime.textContent = `⏱️ 渲染 ${elapsed}ms`;
+    }
+}
+
+// ============================================================
+// 10. 底部生涯统计
+// ============================================================
+function calculateCareerDays() {
+    function parseLocalDate(dateStr) {
+        const parts = dateStr.split('-').map(Number);
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    const fisStart = parseLocalDate('2010-02-12');
+    const wcStart = parseLocalDate('2013-03-16');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const fisDays = Math.floor((today - fisStart) / 86400000);
+    const wcDays = Math.floor((today - wcStart) / 86400000);
+
+    const fisEl = document.getElementById('fis-days');
+    const wcEl = document.getElementById('wc-days');
+    if (fisEl) fisEl.innerHTML = `${fisDays.toLocaleString()} <span class="days-suffix">天</span>`;
+    if (wcEl) wcEl.innerHTML = `${wcDays.toLocaleString()} <span class="days-suffix">天</span>`;
+
+    const statsEl = document.getElementById('header-stats');
+    if (statsEl) statsEl.textContent = `🏁 ${fisDays}天 · 🌍 ${wcDays}天`;
+
+    const footerEl = document.getElementById('footer-stats');
+    if (footerEl) footerEl.textContent = `FIS ${fisDays}天 · 世界杯 ${wcDays}天`;
+}
+
+// ============================================================
+// 11. 绑定事件
+// ============================================================
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
         $$('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
@@ -342,25 +449,11 @@ document.querySelectorAll('.view-btn').forEach(el => {
     });
 });
 
-// ---------- 10. 底部统计 ----------
-function calculateCareerDays() {
-    const fisStart = new Date(2010, 02, 12);
-    const wcStart = new Date(2013, 03, 16);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    const fisDays = Math.floor((today - fisStart) / 86400000);
-    const wcDays = Math.floor((today - wcStart) / 86400000);
-
-    const fisEl = document.getElementById('fis-days');
-    const wcEl = document.getElementById('wc-days');
-    if (fisEl) fisEl.innerHTML = `${fisDays.toLocaleString()} <span class="days-suffix">天</span>`;
-    if (wcEl) wcEl.innerHTML = `${wcDays.toLocaleString()} <span class="days-suffix">天</span>`;
-}
-
-// ---------- 11. 启动 ----------
+// ============================================================
+// 12. 启动
+// ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 启动（最快版本）...');
+    console.log('📄 启动（反向索引修复版）...');
     loadAllData();
     calculateCareerDays();
     setInterval(calculateCareerDays, 60000);
