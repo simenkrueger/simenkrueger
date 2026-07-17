@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 根目录JSON + 标签筛选（修复版）+ 分页
+// 根目录JSON + 标签筛选（排除大类）
 // ============================================================
 
 // ---------- 状态 ----------
@@ -12,8 +12,11 @@ const state = {
     pageSize: 15,
     allData: {},
     seasons: [],
-    selectedTags: []  // 新增：存储选中的标签
+    selectedTags: []
 };
+
+// ---------- 需要排除的大类（与类别筛选按钮重复） ----------
+const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
 
 // ---------- DOM 缓存 ----------
 const dom = {
@@ -111,16 +114,13 @@ function getAllEvents() {
         (state.allData[state.season] || []).forEach(e => events.push({ ...e, _season: state.season }));
     }
     
-    // 类型筛选
     if (state.type !== 'all') {
         events = events.filter(e => e.type === state.type);
     }
     
-    // ✅ 标签筛选（修复版）
     if (state.selectedTags.length > 0) {
         events = events.filter(e => {
             if (!e.tags || !Array.isArray(e.tags)) return false;
-            // 必须包含所有选中的标签（AND 逻辑）
             return state.selectedTags.every(tag => e.tags.includes(tag));
         });
     }
@@ -129,7 +129,7 @@ function getAllEvents() {
     return events;
 }
 
-// ---------- 6. 渲染标签 ----------
+// ---------- 6. 渲染标签（排除大类） ----------
 function renderTags(events) {
     if (!dom.tagContainer) return;
     
@@ -138,6 +138,8 @@ function renderTags(events) {
     events.forEach(e => {
         if (e.tags) {
             e.tags.forEach(t => {
+                // ✅ 排除大类：如果标签在 EXCLUDED_TYPES 中，跳过
+                if (EXCLUDED_TYPES.includes(t)) return;
                 counts[t] = (counts[t] || 0) + 1;
             });
         }
@@ -150,20 +152,17 @@ function renderTags(events) {
         return;
     }
     
-    // ✅ 渲染标签，高亮选中的
     dom.tagContainer.innerHTML = sorted.map(t => {
         const active = state.selectedTags.includes(t) ? 'active' : '';
         return `<span class="filter-tag tag-btn ${active}" data-tag="${t}">${t} (${counts[t]})</span>`;
     }).join('');
     
-    // ✅ 重新绑定标签点击事件
     dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
         el.addEventListener('click', function(e) {
             e.stopPropagation();
             const tag = this.dataset.tag;
             const index = state.selectedTags.indexOf(tag);
             
-            // 切换选中状态
             if (index > -1) {
                 state.selectedTags.splice(index, 1);
                 this.classList.remove('active');
@@ -173,7 +172,7 @@ function renderTags(events) {
             }
             
             state.page = 1;
-            render();  // 重新渲染
+            render();
         });
     });
 }
@@ -188,11 +187,9 @@ function render() {
     const start = (state.page - 1) * state.pageSize;
     const pageData = events.slice(start, start + state.pageSize);
 
-    // 更新计数
     const tagLabel = state.selectedTags.length ? ` [标签: ${state.selectedTags.join('+')}]` : '';
     dom.count.textContent = `${total} 项 (${state.season === 'all' ? '全部赛季' : state.season}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
-    // 先渲染标签（基于当前数据）
     renderTags(events);
 
     if (!total) {
@@ -201,7 +198,6 @@ function render() {
         return;
     }
 
-    // 分组
     const groups = {};
     pageData.forEach(e => {
         const s = e._season || '未分类';
@@ -224,8 +220,9 @@ function render() {
 function renderList(items) {
     let html = `<div class="event-list">`;
     items.forEach(e => {
-        // 显示标签
-        const tagsHtml = (e.tags || []).map(t => `<span class="mini-tag">${t}</span>`).join('');
+        // 过滤掉大类标签再显示
+        const displayTags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
+        const tagsHtml = displayTags.map(t => `<span class="mini-tag">${t}</span>`).join('');
         html += `
             <div class="event-item">
                 <span class="event-date">${e.date || '日期待定'}</span>
@@ -246,7 +243,8 @@ function renderList(items) {
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     items.forEach(e => {
-        const tagsHtml = (e.tags || []).map(t => `<span class="mini-tag">${t}</span>`).join('');
+        const displayTags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
+        const tagsHtml = displayTags.map(t => `<span class="mini-tag">${t}</span>`).join('');
         html += `
             <div class="event-card">
                 <div class="date">${e.date || '日期待定'}</div>
@@ -334,6 +332,6 @@ document.querySelectorAll('.view-btn').forEach(el => {
 
 // ---------- 12. 启动 ----------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 启动（标签筛选修复版）...');
+    console.log('📄 启动（标签排除大类版）...');
     loadSeasonList();
 });
