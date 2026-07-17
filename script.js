@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 反向索引 + 固定分类标签 + 底部时间统计
+// 反向索引 + 固定分类标签 + 折叠详情 + 底部时间统计
 // ============================================================
 
 // ---------- 全局状态 ----------
@@ -163,8 +163,7 @@ async function loadAllData() {
         render();
 
         const elapsed = (performance.now() - startTime).toFixed(0);
-        const total = Object.values(results).reduce((sum, r) => sum + r.events.length, 0);
-        console.log(`✅ 加载完成: ${total} 条数据, ${elapsed}ms`);
+        console.log(`✅ 加载完成: ${allIds.length} 条数据, ${elapsed}ms`);
 
     } catch (err) {
         dom.content.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
@@ -309,7 +308,44 @@ if (dom.clearTagsBtn) {
 }
 
 // ============================================================
-// 5. 渲染主内容
+// 5. 折叠详情切换
+// ============================================================
+function toggleDetail(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'block';
+        const parent = el.closest('.event-item') || el.closest('.event-card');
+        if (parent) {
+            const icon = parent.querySelector('.detail-toggle i, .detail-toggle-card i');
+            if (icon) {
+                icon.style.transform = 'rotate(180deg)';
+                icon.style.transition = 'transform 0.3s ease';
+            }
+            const cardBtn = parent.querySelector('.detail-toggle-card');
+            if (cardBtn) {
+                cardBtn.innerHTML = '<i class="fas fa-chevron-up"></i> 收起';
+            }
+        }
+    } else {
+        el.style.display = 'none';
+        const parent = el.closest('.event-item') || el.closest('.event-card');
+        if (parent) {
+            const icon = parent.querySelector('.detail-toggle i, .detail-toggle-card i');
+            if (icon) {
+                icon.style.transform = 'rotate(0deg)';
+            }
+            const cardBtn = parent.querySelector('.detail-toggle-card');
+            if (cardBtn) {
+                cardBtn.innerHTML = '<i class="fas fa-chevron-down"></i> 详情';
+            }
+        }
+    }
+}
+
+// ============================================================
+// 6. 渲染主内容
 // ============================================================
 function render() {
     const renderStart = performance.now();
@@ -359,7 +395,7 @@ function render() {
 }
 
 // ============================================================
-// 6. 更新渲染时间
+// 7. 更新渲染时间
 // ============================================================
 function updateRenderTime(startTime) {
     const elapsed = (performance.now() - startTime).toFixed(0);
@@ -369,12 +405,14 @@ function updateRenderTime(startTime) {
 }
 
 // ============================================================
-// 7. 列表/卡片渲染
+// 8. 列表渲染（折叠详情）
 // ============================================================
 function renderList(items) {
     let html = `<div class="event-list">`;
     for (const e of items) {
         const tags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
+        const detailId = `detail-${e.id || Math.random().toString(36).substr(2, 9)}`;
+
         html += `
             <div class="event-item">
                 <div class="event-main">
@@ -382,10 +420,17 @@ function renderList(items) {
                     <span class="event-type ${e.type || '其他'}">${e.type || '其他'}</span>
                     <span class="event-title">${e.title || '无标题'}</span>
                     ${e.result ? `<span class="event-result">${e.result}</span>` : ''}
+                    <button class="detail-toggle" onclick="toggleDetail('${detailId}')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
                 </div>
-                ${e.location ? `<div class="event-location"><i class="fas fa-map-pin"></i> ${e.location}</div>` : ''}
-                ${e.description ? `<div class="event-desc">${e.description}</div>` : ''}
-                ${e.detail ? `<div class="event-detail">📋 ${e.detail}</div>` : ''}
+
+                <div class="event-detail-collapsible" id="${detailId}" style="display:none;">
+                    ${e.location ? `<div class="event-location"><i class="fas fa-map-pin"></i> ${e.location}</div>` : ''}
+                    ${e.description ? `<div class="event-desc">${e.description}</div>` : ''}
+                    ${e.detail ? `<div class="event-detail-text">📋 ${e.detail}</div>` : ''}
+                </div>
+
                 <div class="event-footer">
                     <span class="event-tags">${tags.map(t => `<span class="mini-tag">${t}</span>`).join('')}</span>
                     <div class="event-links">
@@ -401,10 +446,15 @@ function renderList(items) {
     return html + `</div>`;
 }
 
+// ============================================================
+// 9. 卡片渲染（折叠详情）
+// ============================================================
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     for (const e of items) {
         const tags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
+        const detailId = `detail-${e.id || Math.random().toString(36).substr(2, 9)}`;
+
         html += `
             <div class="event-card">
                 <div class="card-header">
@@ -413,9 +463,17 @@ function renderGrid(items) {
                 </div>
                 <div class="card-title">${e.title || '无标题'}</div>
                 ${e.result ? `<div class="card-result">🏅 ${e.result}</div>` : ''}
-                ${e.location ? `<div class="card-location"><i class="fas fa-map-pin"></i> ${e.location}</div>` : ''}
-                ${e.description ? `<div class="card-desc">${e.description}</div>` : ''}
-                ${e.detail ? `<div class="card-detail">📋 ${e.detail}</div>` : ''}
+
+                <button class="detail-toggle-card" onclick="toggleDetail('${detailId}')">
+                    <i class="fas fa-chevron-down"></i> 详情
+                </button>
+
+                <div class="event-detail-collapsible" id="${detailId}" style="display:none;">
+                    ${e.location ? `<div class="card-location"><i class="fas fa-map-pin"></i> ${e.location}</div>` : ''}
+                    ${e.description ? `<div class="card-desc">${e.description}</div>` : ''}
+                    ${e.detail ? `<div class="card-detail-text">📋 ${e.detail}</div>` : ''}
+                </div>
+
                 <div class="card-footer">
                     <span class="event-tags">${tags.map(t => `<span class="mini-tag">${t}</span>`).join('')}</span>
                     <div class="event-links">
@@ -432,7 +490,7 @@ function renderGrid(items) {
 }
 
 // ============================================================
-// 8. 赛季按钮
+// 10. 赛季按钮
 // ============================================================
 function renderSeasonTags() {
     if (!dom.seasonContainer) return;
@@ -454,7 +512,7 @@ function renderSeasonTags() {
 }
 
 // ============================================================
-// 9. 分页
+// 11. 分页
 // ============================================================
 function renderPagination() {
     if (!dom.pagination || state.totalPages <= 1) {
@@ -501,7 +559,7 @@ function renderPagination() {
 }
 
 // ============================================================
-// 10. 底部生涯统计
+// 12. 底部生涯统计
 // ============================================================
 function calculateCareerDays() {
     function parseLocalDate(dateStr) {
@@ -530,7 +588,7 @@ function calculateCareerDays() {
 }
 
 // ============================================================
-// 11. 绑定事件
+// 13. 绑定事件
 // ============================================================
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
@@ -552,10 +610,10 @@ document.querySelectorAll('.view-btn').forEach(el => {
 });
 
 // ============================================================
-// 12. 启动
+// 14. 启动
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 启动（反向索引 + 固定分类标签版）...');
+    console.log('📄 启动（反向索引 + 固定分类 + 折叠详情）...');
     loadAllData();
     calculateCareerDays();
     setInterval(calculateCareerDays, 60000);
