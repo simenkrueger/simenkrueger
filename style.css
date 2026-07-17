@@ -640,3 +640,113 @@ body {
         font-size: 1.8rem;
     }
 }
+/* ===== 折叠按钮 ===== */
+.detail-toggle,
+.detail-toggle-card {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b839b;
+    padding: 0.2rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.detail-toggle:hover,
+.detail-toggle-card:hover {
+    background: #eef2f7;
+    color: #d4a373;
+}
+
+.detail-toggle i,
+.detail-toggle-card i {
+    transition: transform 0.3s ease;
+    font-size: 0.7rem;
+}
+
+/* ===== 卡片模式下的详情按钮 ===== */
+.detail-toggle-card {
+    background: #f5f7fa;
+    padding: 0.2rem 1rem;
+    margin: 0.3rem 0;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    color: #4d6479;
+    width: fit-content;
+}
+
+.detail-toggle-card:hover {
+    background: #d4a373;
+    color: white;
+}
+
+/* ===== 折叠详情区域 ===== */
+.event-detail-collapsible {
+    padding: 0.4rem 0.8rem;
+    margin: 0.2rem 0 0.4rem 0;
+    background: #f8faff;
+    border-radius: 8px;
+    border-left: 3px solid #d4a373;
+    animation: slideDown 0.3s ease;
+}
+
+.event-detail-collapsible .event-location,
+.event-detail-collapsible .card-location {
+    font-size: 0.8rem;
+    color: #4d6479;
+    padding: 0.1rem 0;
+}
+
+.event-detail-collapsible .event-desc,
+.event-detail-collapsible .card-desc {
+    font-size: 0.85rem;
+    color: #4d6479;
+    padding: 0.1rem 0;
+}
+
+.event-detail-collapsible .event-detail-text,
+.event-detail-collapsible .card-detail-text {
+    font-size: 0.85rem;
+    color: #4d6479;
+    padding: 0.1rem 0;
+    background: #f0f4fb;
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    margin-top: 0.2rem;
+}
+
+/* ===== 动画 ===== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 事件主行布局 ===== */
+.event-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    flex: 1;
+}
+
+.event-main .detail-toggle {
+    margin-left: auto;
+}
+
+/* ===== 卡片布局 ===== */
+.event-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
