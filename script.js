@@ -400,7 +400,7 @@ function calculateCareerDays() {
         return new Date(parts[0], parts[1] - 1, parts[2]);
     }
 
-    const fisStart = parseLocalDate('2010-02-12';
+    const fisStart = parseLocalDate('2010-02-12');
     const wcStart = parseLocalDate('2013-03-16');
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -447,4 +447,3 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateCareerDays();
     setInterval(calculateCareerDays, 60000);
 });
-
