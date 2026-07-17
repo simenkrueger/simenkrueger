@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 纵向标签筛选（类似 AO3）
+// 固定分类纵向标签筛选
 // ============================================================
 
 // ---------- 状态 ----------
@@ -12,12 +12,72 @@ const state = {
     pageSize: 15,
     allData: {},
     seasons: [],
-    selectedTags: [],        // 选中的标签（完整名称，如"技术:经典式"）
-    tagGroups: {}            // 标签分组 { "技术": ["经典式", "自由式"], ... }
+    selectedTags: []  // 存储选中的标签（完整名称）
 };
 
 // ---------- 需要排除的大类 ----------
 const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
+
+// ---------- 固定标签分类（顺序从上到下） ----------
+const TAG_CATEGORIES = [
+    {
+        id: 'technique',
+        label: '技术类型',
+        icon: '⛷️',
+        tags: [
+            { key: '自由式', label: '自由式' },
+            { key: '传统式', label: '传统式' },
+            { key: '混合式', label: '混合式' }
+        ]
+    },
+    {
+        id: 'result',
+        label: '成绩',
+        icon: '🏅',
+        tags: [
+            { key: '金牌', label: '金牌' },
+            { key: '银牌', label: '银牌' },
+            { key: '铜牌', label: '铜牌' },
+            { key: '前五', label: '前五' },
+            { key: '前十', label: '前十' }
+        ]
+    },
+    {
+        id: 'location',
+        label: '比赛地点',
+        icon: '📍',
+        tags: [
+            { key: '挪威站', label: '🇳🇴 挪威站' },
+            { key: '瑞典站', label: '🇸🇪 瑞典站' },
+            { key: '芬兰站', label: '🇫🇮 芬兰站' },
+            { key: '德国站', label: '🇩🇪 德国站' },
+            { key: '瑞士站', label: '🇨🇭 瑞士站' },
+            { key: '意大利站', label: '🇮🇹 意大利站' },
+            { key: '法国站', label: '🇫🇷 法国站' },
+            { key: '美国站', label: '🇺🇸 美国站' },
+            { key: '加拿大站', label: '🇨🇦 加拿大站' }
+        ]
+    },
+    {
+        id: 'distance',
+        label: '距离',
+        icon: '📏',
+        tags: [
+            { key: '短距离', label: '短距离' },
+            { key: '中短距离 5-10km', label: '中短距离 5-10km' },
+            { key: '中长距离 10-30km', label: '中长距离 10-30km' },
+            { key: '长距离 30km+', label: '长距离 30km+' }
+        ]
+    }
+];
+
+// ---------- 标签到分类的映射 ----------
+const TAG_CATEGORY_MAP = {};
+TAG_CATEGORIES.forEach(cat => {
+    cat.tags.forEach(t => {
+        TAG_CATEGORY_MAP[t.key] = cat.id;
+    });
+});
 
 // ---------- DOM 缓存 ----------
 const dom = {
@@ -119,7 +179,6 @@ function getAllEvents() {
         events = events.filter(e => e.type === state.type);
     }
     
-    // 标签筛选（完整标签名匹配）
     if (state.selectedTags.length > 0) {
         events = events.filter(e => {
             if (!e.tags || !Array.isArray(e.tags)) return false;
@@ -131,70 +190,47 @@ function getAllEvents() {
     return events;
 }
 
-// ---------- 6. 提取标签分组 ----------
-function extractTagGroups(events) {
-    const groups = {};
-    const allTags = new Set();
-    
+// ---------- 6. 计算标签计数 ----------
+function getTagCounts(events) {
+    const counts = {};
     events.forEach(e => {
         if (e.tags) {
             e.tags.forEach(tag => {
-                // 跳过排除的大类
-                if (EXCLUDED_TYPES.includes(tag)) return;
-                
-                allTags.add(tag);
-                
-                // 按 ":" 分割标签，格式: "分类:标签名"
-                if (tag.includes(':')) {
-                    const [category, name] = tag.split(':');
-                    if (!groups[category]) groups[category] = {};
-                    if (!groups[category][name]) groups[category][name] = 0;
-                    groups[category][name]++;
-                } else {
-                    // 没有分类的标签归入"通用"
-                    if (!groups['通用']) groups['通用'] = {};
-                    if (!groups['通用'][tag]) groups['通用'][tag] = 0;
-                    groups['通用'][tag]++;
-                }
+                counts[tag] = (counts[tag] || 0) + 1;
             });
         }
     });
-    
-    return groups;
+    return counts;
 }
 
 // ---------- 7. 渲染纵向标签 ----------
 function renderTagSidebar(events) {
     if (!dom.tagSidebar) return;
     
-    const groups = extractTagGroups(events);
-    const groupKeys = Object.keys(groups);
-    
-    if (!groupKeys.length) {
-        dom.tagSidebar.innerHTML = '<div class="loading-tags">暂无标签</div>';
-        return;
-    }
+    const counts = getTagCounts(events);
     
     let html = '';
-    groupKeys.forEach(category => {
-        const items = groups[category];
-        const sortedItems = Object.keys(items).sort((a, b) => items[b] - items[a]);
+    TAG_CATEGORIES.forEach(category => {
+        // 检查该分类下是否有标签有数据
+        const hasData = category.tags.some(t => counts[t.key] > 0);
+        if (!hasData) return;
         
         html += `<div class="tag-group">`;
-        html += `<div class="tag-group-title" data-group="${category}">`;
-        html += `<span>${category}</span>`;
+        html += `<div class="tag-group-title" data-group="${category.id}">`;
+        html += `<span>${category.icon} ${category.label}</span>`;
         html += `<span class="arrow">▼</span>`;
         html += `</div>`;
         html += `<div class="tag-group-items">`;
         
-        sortedItems.forEach(name => {
-            const fullTag = `${category}:${name}`;
-            const count = items[name];
-            const checked = state.selectedTags.includes(fullTag) ? 'checked' : '';
+        category.tags.forEach(t => {
+            const count = counts[t.key] || 0;
+            if (count === 0) return; // 不显示计数为0的标签
+            
+            const checked = state.selectedTags.includes(t.key);
             html += `
                 <label class="tag-item ${checked ? 'active' : ''}">
-                    <input type="checkbox" data-tag="${fullTag}" ${checked} />
-                    <span class="tag-label">${name}</span>
+                    <input type="checkbox" data-tag="${t.key}" ${checked ? 'checked' : ''} />
+                    <span class="tag-label">${t.label}</span>
                     <span class="tag-count">${count}</span>
                 </label>
             `;
@@ -208,7 +244,8 @@ function renderTagSidebar(events) {
     // ---------- 绑定事件 ----------
     // 复选框点击
     dom.tagSidebar.querySelectorAll('.tag-item input[type="checkbox"]').forEach(el => {
-        el.addEventListener('change', function() {
+        el.addEventListener('change', function(e) {
+            e.stopPropagation();
             const tag = this.dataset.tag;
             const label = this.closest('.tag-item');
             
@@ -224,6 +261,18 @@ function renderTagSidebar(events) {
             
             state.page = 1;
             render();
+        });
+    });
+    
+    // 点击整个 label 触发 checkbox
+    dom.tagSidebar.querySelectorAll('.tag-item').forEach(el => {
+        el.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
         });
     });
     
@@ -250,8 +299,7 @@ function render() {
     const start = (state.page - 1) * state.pageSize;
     const pageData = events.slice(start, start + state.pageSize);
 
-    // 更新计数
-    const tagLabel = state.selectedTags.length ? ` [标签: ${state.selectedTags.length}个]` : '';
+    const tagLabel = state.selectedTags.length ? ` [标签: ${state.selectedTags.join(', ')}]` : '';
     dom.count.textContent = `${total} 项 (${state.season === 'all' ? '全部赛季' : state.season}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
     // 渲染标签侧边栏
@@ -263,7 +311,6 @@ function render() {
         return;
     }
 
-    // 分组
     const groups = {};
     pageData.forEach(e => {
         const s = e._season || '未分类';
@@ -368,7 +415,6 @@ function renderPagination(totalPages) {
 if (dom.clearTagsBtn) {
     dom.clearTagsBtn.addEventListener('click', function() {
         state.selectedTags = [];
-        // 取消所有复选框的选中状态
         dom.tagSidebar.querySelectorAll('.tag-item input[type="checkbox"]').forEach(el => {
             el.checked = false;
             el.closest('.tag-item').classList.remove('active');
@@ -411,6 +457,6 @@ document.querySelectorAll('.view-btn').forEach(el => {
 
 // ---------- 14. 启动 ----------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 启动（纵向标签版）...');
+    console.log('📄 启动（固定分类标签版）...');
     loadSeasonList();
 });
