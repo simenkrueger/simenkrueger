@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 极致优化：预加载 + 预处理 + 轻量渲染
+// 优化：标签筛选 + 底部时间显示
 // ============================================================
 
 // ---------- 全局状态 ----------
@@ -11,14 +11,14 @@ const state = {
     page: 1,
     pageSize: 15,
     seasons: [],
-    // 预处理后的数据
+    selectedTags: [],
+    // 预处理数据
     preprocessed: {
-        all: [],           // 所有事件的扁平数组（已排序）
-        bySeason: {},      // 按赛季分组 { '2025-2026': [...], ... }
-        byType: {}         // 按类型分组 { '世界杯': [...], ... }
+        all: [],
+        bySeason: {},
+        byType: {},
+        byTag: {}        // 新增：按标签索引 { '金牌': [id1, id2], ... }
     },
-    // 当前显示的数据（缓存）
-    currentData: [],
     totalPages: 1
 };
 
@@ -28,26 +28,30 @@ const dom = {
     count: document.getElementById('result-count'),
     seasonContainer: document.getElementById('season-tags-container'),
     tagContainer: document.getElementById('tag-container'),
-    pagination: document.getElementById('pagination-container')
+    pagination: document.getElementById('pagination-container'),
+    fisDays: document.getElementById('fis-days'),
+    wcDays: document.getElementById('wc-days'),
+    headerStats: document.getElementById('header-stats'),
+    footerStats: document.getElementById('footer-stats'),
+    renderTime: document.getElementById('render-time')  // 新增
 };
 
-// ---------- 工具函数 ----------
-const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
+// ---------- 常量 ----------
+const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
 
-// ---------- 1. 加载所有数据（预加载 + 预处理） ----------
+// ---------- 1. 加载数据 ----------
 async function loadAllData() {
     dom.content.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载数据中...</div>`;
     const startTime = performance.now();
 
     try {
-        // 1. 加载索引
         const indexRes = await fetch('index.json');
         if (!indexRes.ok) throw new Error('index.json 不存在');
         const indexData = await indexRes.json();
         state.seasons = indexData.seasons || [];
 
-        // 2. 并行加载所有赛季 JSON
-        const fetchPromises = state.seasons.map(async (season) => {
+        // 并行加载
+        const results = await Promise.all(state.seasons.map(async (season) => {
             try {
                 const res = await fetch(`${season}.json`);
                 if (res.ok) {
@@ -58,44 +62,56 @@ async function loadAllData() {
             } catch {
                 return { season, events: [] };
             }
-        });
+        }));
 
-        const results = await Promise.all(fetchPromises);
-
-        // 3. 预处理数据（一次性完成所有数据处理）
+        // ---------- 数据预处理 ----------
         const allEvents = [];
         const bySeason = {};
         const byType = {};
+        const byTag = {};
 
         results.forEach(({ season, events }) => {
             bySeason[season] = events;
             events.forEach(e => {
-                const eventWithSeason = { ...e, _season: season };
-                allEvents.push(eventWithSeason);
-                
-                // 按类型分组
+                const item = { ...e, _season: season };
+                allEvents.push(item);
+
+                // 按类型索引
                 const type = e.type || '其他';
                 if (!byType[type]) byType[type] = [];
-                byType[type].push(eventWithSeason);
+                byType[type].push(item);
+
+                // 按标签索引（关键优化）
+                if (e.tags) {
+                    e.tags.forEach(tag => {
+                        if (!byTag[tag]) byTag[tag] = [];
+                        byTag[tag].push(item);
+                    });
+                }
             });
         });
 
-        // 排序（一次性完成）
+        // 排序
         allEvents.sort((a, b) => (a.date > b.date ? -1 : 1));
         Object.keys(byType).forEach(key => {
             byType[key].sort((a, b) => (a.date > b.date ? -1 : 1));
+        });
+        Object.keys(byTag).forEach(key => {
+            byTag[key].sort((a, b) => (a.date > b.date ? -1 : 1));
         });
 
         state.preprocessed.all = allEvents;
         state.preprocessed.bySeason = bySeason;
         state.preprocessed.byType = byType;
+        state.preprocessed.byTag = byTag;
 
-        // 4. 渲染
+        // 渲染
         renderSeasonTags();
+        renderTagFilters();
         render();
 
         const elapsed = (performance.now() - startTime).toFixed(0);
-        console.log(`✅ 预加载+预处理完成: ${allEvents.length} 条数据, ${elapsed}ms`);
+        console.log(`✅ 加载完成: ${allEvents.length} 条数据, ${elapsed}ms`);
 
     } catch (err) {
         dom.content.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
@@ -103,52 +119,126 @@ async function loadAllData() {
     }
 }
 
-// ---------- 2. 获取数据（纯内存，极快） ----------
+// ---------- 2. 获取数据（使用索引，极快） ----------
 function getFilteredData() {
-    // 直接使用预处理后的数据，避免重复遍历
+    let events = [];
+
+    // 按赛季
     if (state.season === 'all') {
-        if (state.type === 'all') {
-            return state.preprocessed.all;
-        } else {
-            return state.preprocessed.byType[state.type] || [];
-        }
+        events = state.preprocessed.all;
     } else {
-        // 特定赛季
-        let events = state.preprocessed.bySeason[state.season] || [];
-        if (state.type !== 'all') {
-            events = events.filter(e => e.type === state.type);
-        }
-        return events;
+        events = state.preprocessed.bySeason[state.season] || [];
     }
+
+    // 按类型（使用预索引）
+    if (state.type !== 'all') {
+        events = events.filter(e => e.type === state.type);
+    }
+
+    // 按标签（关键优化：使用标签索引）
+    if (state.selectedTags.length > 0) {
+        // 取第一个标签的结果作为基础
+        const firstTag = state.selectedTags[0];
+        let result = state.preprocessed.byTag[firstTag] || [];
+        
+        // 对剩余标签取交集
+        for (let i = 1; i < state.selectedTags.length; i++) {
+            const tag = state.selectedTags[i];
+            const tagEvents = state.preprocessed.byTag[tag] || [];
+            // 使用 Set 加速交集计算
+            const tagSet = new Set(tagEvents.map(e => e.id));
+            result = result.filter(e => tagSet.has(e.id));
+            if (result.length === 0) break;
+        }
+        
+        // 再应用赛季和类型筛选
+        if (state.season !== 'all') {
+            result = result.filter(e => e._season === state.season);
+        }
+        if (state.type !== 'all') {
+            result = result.filter(e => e.type === state.type);
+        }
+        events = result;
+    }
+
+    return events;
 }
 
-// ---------- 3. 渲染（极简） ----------
-function render() {
-    const startTime = performance.now();
+// ---------- 3. 渲染标签筛选器 ----------
+function renderTagFilters() {
+    if (!dom.tagContainer) return;
 
-    // 1. 获取数据（纯内存，已排序）
+    // 统计标签（从预处理数据中获取）
+    const tagCounts = {};
+    Object.keys(state.preprocessed.byTag).forEach(tag => {
+        // 排除大类
+        if (EXCLUDED_TYPES.includes(tag)) return;
+        tagCounts[tag] = state.preprocessed.byTag[tag].length;
+    });
+
+    const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
+
+    if (sortedTags.length === 0) {
+        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
+        return;
+    }
+
+    let html = '';
+    sortedTags.forEach(tag => {
+        const active = state.selectedTags.includes(tag) ? 'active' : '';
+        html += `<span class="filter-tag tag-btn ${active}" data-tag="${tag}">${tag} (${tagCounts[tag]})</span>`;
+    });
+    dom.tagContainer.innerHTML = html;
+
+    // 绑定事件
+    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
+        el.addEventListener('click', function() {
+            const tag = this.dataset.tag;
+            const index = state.selectedTags.indexOf(tag);
+            
+            if (index > -1) {
+                state.selectedTags.splice(index, 1);
+                this.classList.remove('active');
+            } else {
+                state.selectedTags.push(tag);
+                this.classList.add('active');
+            }
+            
+            state.page = 1;
+            render();
+        });
+    });
+}
+
+// ---------- 4. 渲染主内容 ----------
+function render() {
+    const renderStart = performance.now();
+
+    // 获取数据
     const allData = getFilteredData();
     const total = allData.length;
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.page > totalPages) state.page = totalPages;
     state.totalPages = totalPages;
 
-    // 2. 分页切片
+    // 分页
     const start = (state.page - 1) * state.pageSize;
     const pageData = allData.slice(start, start + state.pageSize);
 
-    // 3. 更新计数
+    // 更新计数
     const seasonLabel = state.season === 'all' ? '全部赛季' : state.season;
-    dom.count.textContent = `${total} 项 (${seasonLabel} · ${state.page}/${totalPages} 页)`;
+    const tagLabel = state.selectedTags.length ? ` [${state.selectedTags.join('+')}]` : '';
+    dom.count.textContent = `${total} 项 (${seasonLabel}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
-    // 4. 空状态
+    // 空状态
     if (total === 0) {
         dom.content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
         renderPagination();
+        updateRenderTime(renderStart);
         return;
     }
 
-    // 5. 按赛季分组（只针对当前页数据）
+    // 分组
     const groups = {};
     pageData.forEach(e => {
         const s = e._season || '未分类';
@@ -156,10 +246,7 @@ function render() {
         groups[s].push(e);
     });
 
-    // 6. 生成 HTML（使用 DocumentFragment 代替 innerHTML 全量替换）
-    const fragment = document.createDocumentFragment();
-    const tempDiv = document.createElement('div');
-
+    // 生成 HTML
     let html = '';
     for (const [season, items] of Object.entries(groups)) {
         html += `<div class="season-group">`;
@@ -168,21 +255,23 @@ function render() {
         html += `</div>`;
     }
 
-    // 7. 使用 requestAnimationFrame 在下一帧更新
+    // 使用 requestAnimationFrame 优化渲染
     requestAnimationFrame(() => {
         dom.content.innerHTML = html;
         renderPagination();
+        updateRenderTime(renderStart);
     });
+}
 
+// ---------- 5. 更新渲染时间显示 ----------
+function updateRenderTime(startTime) {
     const elapsed = (performance.now() - startTime).toFixed(0);
-    if (pageData.length > 0 && elapsed > 5) {
-        console.log(`⚡ 渲染: ${pageData.length} 条, ${elapsed}ms`);
+    if (dom.renderTime) {
+        dom.renderTime.textContent = `⏱️ ${elapsed}ms`;
     }
 }
 
-// ---------- 4. 列表渲染（精简） ----------
-const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
-
+// ---------- 6. 列表渲染 ----------
 function renderList(items) {
     let html = `<div class="event-list">`;
     for (const e of items) {
@@ -213,7 +302,7 @@ function renderList(items) {
     return html + `</div>`;
 }
 
-// ---------- 5. 卡片渲染 ----------
+// ---------- 7. 卡片渲染 ----------
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     for (const e of items) {
@@ -244,7 +333,7 @@ function renderGrid(items) {
     return html + `</div>`;
 }
 
-// ---------- 6. 赛季按钮 ----------
+// ---------- 8. 赛季按钮 ----------
 function renderSeasonTags() {
     if (!dom.seasonContainer) return;
     let html = `<span class="filter-tag active" data-season="all">全部</span>`;
@@ -264,7 +353,7 @@ function renderSeasonTags() {
     });
 }
 
-// ---------- 7. 分页 ----------
+// ---------- 9. 分页 ----------
 function renderPagination() {
     if (!dom.pagination || state.totalPages <= 1) {
         dom.pagination.innerHTML = '';
@@ -309,10 +398,50 @@ function renderPagination() {
     });
 }
 
-// ---------- 8. 绑定事件 ----------
+// ---------- 10. 底部生涯统计（含时间显示） ----------
+function calculateCareerDays() {
+    const startTime = performance.now();
+
+    function parseLocalDate(dateStr) {
+        const parts = dateStr.split('-').map(Number);
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    const fisStart = parseLocalDate('2010-02-12');
+    const wcStart = parseLocalDate('2013-03-16');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const fisDays = Math.floor((today - fisStart) / 86400000);
+    const wcDays = Math.floor((today - wcStart) / 86400000);
+
+    // 更新底部显示
+    if (dom.fisDays) {
+        dom.fisDays.innerHTML = `${fisDays.toLocaleString()} <span class="days-suffix">天</span>`;
+    }
+    if (dom.wcDays) {
+        dom.wcDays.innerHTML = `${wcDays.toLocaleString()} <span class="days-suffix">天</span>`;
+    }
+
+    // 更新头部统计
+    if (dom.headerStats) {
+        dom.headerStats.textContent = `🏁 ${fisDays}天 · 🌍 ${wcDays}天`;
+    }
+
+    // 更新底部footer统计
+    if (dom.footerStats) {
+        dom.footerStats.textContent = `FIS ${fisDays}天 · 世界杯 ${wcDays}天`;
+    }
+
+    // 显示计算耗时
+    const elapsed = (performance.now() - startTime).toFixed(0);
+    console.log(`⏱️ 底部统计计算: ${elapsed}ms`);
+}
+
+// ---------- 11. 绑定事件 ----------
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
-        $$('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         state.type = this.dataset.filter;
         state.page = 1;
@@ -322,45 +451,17 @@ document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
 
 document.querySelectorAll('.view-btn').forEach(el => {
     el.addEventListener('click', function() {
-        $$('.view-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         state.view = this.dataset.view;
         render();
     });
 });
 
-// ---------- 9. 底部生涯统计 ----------
-function calculateCareerDays() {
-    function parseLocalDate(dateStr) {
-        const parts = dateStr.split('-').map(Number);
-        return new Date(parts[0], parts[1] - 1, parts[2]);
-    }
-
-    const fisStart = parseLocalDate('2013-11-29');
-    const wcStart = parseLocalDate('2014-11-28');
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    const fisDays = Math.floor((today - fisStart) / 86400000);
-    const wcDays = Math.floor((today - wcStart) / 86400000);
-
-    const fisEl = document.getElementById('fis-days');
-    const wcEl = document.getElementById('wc-days');
-    if (fisEl) fisEl.innerHTML = `${fisDays.toLocaleString()} <span class="days-suffix">天</span>`;
-    if (wcEl) wcEl.innerHTML = `${wcDays.toLocaleString()} <span class="days-suffix">天</span>`;
-
-    const statsEl = document.getElementById('header-stats');
-    if (statsEl) statsEl.textContent = `🏁 ${fisDays}天 · 🌍 ${wcDays}天`;
-
-    const footerEl = document.getElementById('footer-stats');
-    if (footerEl) footerEl.textContent = `FIS ${fisDays}天 · 世界杯 ${wcDays}天`;
-}
-
-// ---------- 10. 启动 ----------
+// ---------- 12. 启动 ----------
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 启动（极致优化版）...');
+    console.log('📄 启动（标签索引优化版）...');
     loadAllData();
     calculateCareerDays();
     setInterval(calculateCareerDays, 60000);
 });
-
