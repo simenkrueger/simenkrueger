@@ -461,46 +461,41 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSeasonList();
 });
 // ============================================================
-// 生涯天数计算器（动态更新）
+// 生涯天数计算器（支持本地时区）
 // ============================================================
 
 function calculateCareerDays() {
-    const fisStart = new Date('2010-02-12');
-    const wcStart = new Date('2013-03-16');
+    // 1. 使用本地时区解析日期（避免 UTC 偏移）
+    function parseLocalDate(dateStr) {
+        const parts = dateStr.split('-').map(Number);
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    
+    const fisStart = parseLocalDate('2010-02-12';
+    const wcStart = parseLocalDate('2013-03-16');
     const now = new Date();
-
-    // 计算天数
-    const fisDays = Math.floor((now - fisStart) / (1000 * 60 * 60 * 24));
-    const wcDays = Math.floor((now - wcStart) / (1000 * 60 * 60 * 24));
-
-    // 更新 DOM
+    
+    // 2. 重置时间为当天 00:00:00（精确到天）
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const fisStartDay = new Date(fisStart.getFullYear(), fisStart.getMonth(), fisStart.getDate());
+    const wcStartDay = new Date(wcStart.getFullYear(), wcStart.getMonth(), wcStart.getDate());
+    
+    // 3. 计算天数（+1 包含当天）
+    const fisDays = Math.floor((today - fisStartDay) / (1000 * 60 * 60 * 24));
+    const wcDays = Math.floor((today - wcStartDay) / (1000 * 60 * 60 * 24));
+    
+    // 4. 更新显示
     const fisEl = document.getElementById('fis-days');
     const wcEl = document.getElementById('wc-days');
-
+    
     if (fisEl) {
         fisEl.innerHTML = `${fisDays.toLocaleString()} <span class="days-suffix">天</span>`;
     }
     if (wcEl) {
         wcEl.innerHTML = `${wcDays.toLocaleString()} <span class="days-suffix">天</span>`;
     }
-
-    // 同时更新标题栏统计数据
-    const statsEl = document.getElementById('header-stats');
-    if (statsEl) {
-        statsEl.textContent = `🏁 ${fisDays}天 · 🌍 ${wcDays}天`;
-    }
-
-    // 更新底部footer统计
-    const footerEl = document.getElementById('footer-stats');
-    if (footerEl) {
-        footerEl.textContent = `FIS ${fisDays}天 · 世界杯 ${wcDays}天`;
-    }
 }
 
-// 页面加载时计算一次
-document.addEventListener('DOMContentLoaded', function() {
-    calculateCareerDays();
-});
-
-// 每分钟自动刷新一次（保持最新）
+// 每分钟刷新一次
+document.addEventListener('DOMContentLoaded', calculateCareerDays);
 setInterval(calculateCareerDays, 60000);
