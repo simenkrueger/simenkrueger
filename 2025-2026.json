@@ -3,135 +3,63 @@
   "events": [
     {
       "id": 1,
-      "title": "世界花样滑冰锦标赛",
-      "date": "2026-07-13",
-      "type": "比赛",
+      "title": "世界杯 挪威站 50km 集体出发",
+      "date": "2026-03-15",
+      "type": "世界杯",
       "result": "🥇 金牌",
-      "location": "美国波士顿",
-      "description": "自由滑总分 212.34 分",
-      "photo": "https://weibo.com/xxx/photo1",
-      "video": "https://weibo.com/xxx/video1"
+      "location": "挪威·特隆赫姆",
+      "description": "经典式，用时 2:08:34.5",
+      "tags": ["长距离", "集体出发", "经典式", "挪威站", "金牌"]
     },
     {
       "id": 2,
-      "title": "Fantasy on Ice 2026 幕张",
-      "date": "2026-06-20",
-      "type": "冰演",
-      "result": "",
-      "location": "日本幕张",
-      "description": "冰演曲目：SEIMEI 2.0",
-      "photo": "https://weibo.com/xxx/photo2",
-      "video": ""
+      "title": "世界杯 芬兰站 15km 间隔出发",
+      "date": "2026-02-22",
+      "type": "世界杯",
+      "result": "🥈 银牌",
+      "location": "芬兰·拉赫蒂",
+      "description": "自由式，用时 34:12.8",
+      "tags": ["中距离", "间隔出发", "自由式", "芬兰站", "银牌"]
     },
     {
       "id": 3,
-      "title": "Fantasy on Ice 2026 神户",
-      "date": "2026-06-27",
-      "type": "冰演",
-      "result": "",
-      "location": "日本神户",
-      "description": "冰演曲目：SEIMEI 2.0",
-      "photo": "https://weibo.com/xxx/photo3",
-      "video": ""
+      "title": "世锦赛 50km 集体出发",
+      "date": "2025-12-10",
+      "type": "世锦赛",
+      "result": "🥇 金牌",
+      "location": "瑞典·法伦",
+      "description": "经典式，用时 2:12:45.3",
+      "tags": ["世锦赛", "长距离", "经典式", "金牌"]
     },
     {
       "id": 4,
-      "title": "全日本花样滑冰锦标赛",
-      "date": "2026-04-02",
-      "type": "比赛",
-      "result": "🏆 冠军",
-      "location": "日本大阪",
-      "description": "总分 321.10 分",
-      "photo": "https://weibo.com/xxx/photo4",
-      "video": "https://weibo.com/xxx/video4"
+      "title": "世界杯 意大利站 10km 间隔出发",
+      "date": "2025-11-28",
+      "type": "世界杯",
+      "result": "🥉 铜牌",
+      "location": "意大利·瓦尔迪菲耶梅",
+      "description": "经典式，用时 25:18.2",
+      "tags": ["中距离", "经典式", "意大利站", "铜牌"]
     },
     {
       "id": 5,
-      "title": "四大洲花样滑冰锦标赛",
-      "date": "2026-03-15",
-      "type": "比赛",
-      "result": "🥇 金牌",
-      "location": "中国北京",
-      "description": "总分 315.67 分",
-      "photo": "https://weibo.com/xxx/photo5",
-      "video": "https://weibo.com/xxx/video5"
+      "title": "挪威全国锦标赛 30km 追逐赛",
+      "date": "2025-10-05",
+      "type": "全国锦标赛",
+      "result": "🏆 冠军",
+      "location": "挪威·利勒哈默尔",
+      "description": "自由式，用时 1:15:22.9",
+      "tags": ["全国锦标赛", "追逐赛", "自由式", "冠军"]
     },
     {
       "id": 6,
-      "title": "NHK杯 2025",
-      "date": "2025-12-10",
-      "type": "比赛",
+      "title": "夏季滑雪锦标赛 10km",
+      "date": "2025-08-16",
+      "type": "夏季比赛",
       "result": "🥇 金牌",
-      "location": "日本北海道",
-      "description": "总分 291.23 分",
-      "photo": "https://weibo.com/xxx/photo6",
-      "video": "https://weibo.com/xxx/video6"
-    },
-    {
-      "id": 7,
-      "title": "花样滑冰大奖赛总决赛",
-      "date": "2025-12-05",
-      "type": "比赛",
-      "result": "🥈 银牌",
-      "location": "意大利都灵",
-      "description": "总分 298.56 分",
-      "photo": "https://weibo.com/xxx/photo7",
-      "video": "https://weibo.com/xxx/video7"
-    },
-    {
-      "id": 8,
-      "title": "NHK杯 2025 赛前采访",
-      "date": "2025-12-08",
-      "type": "采访",
-      "result": "",
-      "location": "日本北海道",
-      "description": "'希望能给观众带来新的感动'",
-      "photo": "https://weibo.com/xxx/photo8",
-      "video": "https://weibo.com/xxx/video8"
-    },
-    {
-      "id": 9,
-      "title": "Stars on Ice 2026 大阪",
-      "date": "2026-01-15",
-      "type": "冰演",
-      "result": "",
-      "location": "日本大阪",
-      "description": "冰演曲目：Hope & Legacy",
-      "photo": "https://weibo.com/xxx/photo9",
-      "video": ""
-    },
-    {
-      "id": 10,
-      "title": "羽生结弦 特别采访 2026新春",
-      "date": "2026-01-01",
-      "type": "采访",
-      "result": "",
-      "location": "日本东京",
-      "description": "'希望在冰面上传递更多感动'",
-      "photo": "https://weibo.com/xxx/photo10",
-      "video": "https://weibo.com/xxx/video10"
-    },
-    {
-      "id": 11,
-      "title": "冰上艺术展 2026 东京站",
-      "date": "2026-02-01",
-      "type": "展览",
-      "result": "",
-      "location": "日本东京",
-      "description": "历年比赛服与纪念品展示",
-      "photo": "https://weibo.com/xxx/photo11",
-      "video": ""
-    },
-    {
-      "id": 12,
-      "title": "2026 世锦赛 赛后采访",
-      "date": "2026-07-14",
-      "type": "采访",
-      "result": "",
-      "location": "美国波士顿",
-      "description": "'感谢大家的支持，我会继续挑战极限'",
-      "photo": "https://weibo.com/xxx/photo12",
-      "video": "https://weibo.com/xxx/video12"
+      "location": "挪威·奥斯陆",
+      "description": "经典式，用时 26:45.1",
+      "tags": ["夏季比赛", "经典式", "金牌"]
     }
   ]
 }
