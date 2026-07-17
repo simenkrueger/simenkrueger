@@ -364,7 +364,32 @@ body {
     color: white !important;
     border-color: #d4a373 !important;
 }
+/* ---------- 标签样式 ---------- */
+.event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.4rem;
+}
 
+.mini-tag {
+    background: #eef2f7;
+    padding: 0.05rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.6rem;
+    color: #4d6479;
+    white-space: nowrap;
+}
+
+/* 标签按钮选中状态 */
+.tag-btn.active {
+    background: #d4a373 !important;
+    color: white !important;
+    border-color: #d4a373 !important;
+}
+
+.tag-btn:hover {
+    background: #e9eef5;
+}
 /* 标签按钮悬停 */
 .tag-btn:hover {
     background: #e9eef5;
