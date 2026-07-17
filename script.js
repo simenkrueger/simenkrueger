@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 根目录JSON + 标签筛选（排除大类）
+// 纵向标签筛选（类似 AO3）
 // ============================================================
 
 // ---------- 状态 ----------
@@ -12,10 +12,11 @@ const state = {
     pageSize: 15,
     allData: {},
     seasons: [],
-    selectedTags: []
+    selectedTags: [],        // 选中的标签（完整名称，如"技术:经典式"）
+    tagGroups: {}            // 标签分组 { "技术": ["经典式", "自由式"], ... }
 };
 
-// ---------- 需要排除的大类（与类别筛选按钮重复） ----------
+// ---------- 需要排除的大类 ----------
 const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
 
 // ---------- DOM 缓存 ----------
@@ -23,8 +24,9 @@ const dom = {
     content: document.getElementById('content-area'),
     count: document.getElementById('result-count'),
     seasonContainer: document.getElementById('season-tags-container'),
-    tagContainer: document.getElementById('tag-container'),
-    pagination: document.getElementById('pagination-container')
+    tagSidebar: document.getElementById('tag-sidebar-content'),
+    pagination: document.getElementById('pagination-container'),
+    clearTagsBtn: document.getElementById('clear-tags-btn')
 };
 
 // ---------- 工具函数 ----------
@@ -47,9 +49,8 @@ async function loadSeasonList() {
 // ---------- 2. 渲染赛季按钮 ----------
 function renderSeasonTags() {
     if (!dom.seasonContainer) return;
-    const seasons = state.seasons;
     let html = `<span class="filter-tag active" data-season="all">全部</span>`;
-    seasons.forEach(s => {
+    state.seasons.forEach(s => {
         html += `<span class="filter-tag" data-season="${s}">${s}</span>`;
     });
     dom.seasonContainer.innerHTML = html;
@@ -118,6 +119,7 @@ function getAllEvents() {
         events = events.filter(e => e.type === state.type);
     }
     
+    // 标签筛选（完整标签名匹配）
     if (state.selectedTags.length > 0) {
         events = events.filter(e => {
             if (!e.tags || !Array.isArray(e.tags)) return false;
@@ -129,55 +131,116 @@ function getAllEvents() {
     return events;
 }
 
-// ---------- 6. 渲染标签（排除大类） ----------
-function renderTags(events) {
-    if (!dom.tagContainer) return;
+// ---------- 6. 提取标签分组 ----------
+function extractTagGroups(events) {
+    const groups = {};
+    const allTags = new Set();
     
-    // 统计标签
-    const counts = {};
     events.forEach(e => {
         if (e.tags) {
-            e.tags.forEach(t => {
-                // ✅ 排除大类：如果标签在 EXCLUDED_TYPES 中，跳过
-                if (EXCLUDED_TYPES.includes(t)) return;
-                counts[t] = (counts[t] || 0) + 1;
+            e.tags.forEach(tag => {
+                // 跳过排除的大类
+                if (EXCLUDED_TYPES.includes(tag)) return;
+                
+                allTags.add(tag);
+                
+                // 按 ":" 分割标签，格式: "分类:标签名"
+                if (tag.includes(':')) {
+                    const [category, name] = tag.split(':');
+                    if (!groups[category]) groups[category] = {};
+                    if (!groups[category][name]) groups[category][name] = 0;
+                    groups[category][name]++;
+                } else {
+                    // 没有分类的标签归入"通用"
+                    if (!groups['通用']) groups['通用'] = {};
+                    if (!groups['通用'][tag]) groups['通用'][tag] = 0;
+                    groups['通用'][tag]++;
+                }
             });
         }
     });
     
-    const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    return groups;
+}
+
+// ---------- 7. 渲染纵向标签 ----------
+function renderTagSidebar(events) {
+    if (!dom.tagSidebar) return;
     
-    if (!sorted.length) {
-        dom.tagContainer.innerHTML = '<span style="color:#6b839b;font-size:0.8rem;">暂无标签</span>';
+    const groups = extractTagGroups(events);
+    const groupKeys = Object.keys(groups);
+    
+    if (!groupKeys.length) {
+        dom.tagSidebar.innerHTML = '<div class="loading-tags">暂无标签</div>';
         return;
     }
     
-    dom.tagContainer.innerHTML = sorted.map(t => {
-        const active = state.selectedTags.includes(t) ? 'active' : '';
-        return `<span class="filter-tag tag-btn ${active}" data-tag="${t}">${t} (${counts[t]})</span>`;
-    }).join('');
+    let html = '';
+    groupKeys.forEach(category => {
+        const items = groups[category];
+        const sortedItems = Object.keys(items).sort((a, b) => items[b] - items[a]);
+        
+        html += `<div class="tag-group">`;
+        html += `<div class="tag-group-title" data-group="${category}">`;
+        html += `<span>${category}</span>`;
+        html += `<span class="arrow">▼</span>`;
+        html += `</div>`;
+        html += `<div class="tag-group-items">`;
+        
+        sortedItems.forEach(name => {
+            const fullTag = `${category}:${name}`;
+            const count = items[name];
+            const checked = state.selectedTags.includes(fullTag) ? 'checked' : '';
+            html += `
+                <label class="tag-item ${checked ? 'active' : ''}">
+                    <input type="checkbox" data-tag="${fullTag}" ${checked} />
+                    <span class="tag-label">${name}</span>
+                    <span class="tag-count">${count}</span>
+                </label>
+            `;
+        });
+        
+        html += `</div></div>`;
+    });
     
-    dom.tagContainer.querySelectorAll('.tag-btn').forEach(el => {
-        el.addEventListener('click', function(e) {
-            e.stopPropagation();
+    dom.tagSidebar.innerHTML = html;
+    
+    // ---------- 绑定事件 ----------
+    // 复选框点击
+    dom.tagSidebar.querySelectorAll('.tag-item input[type="checkbox"]').forEach(el => {
+        el.addEventListener('change', function() {
             const tag = this.dataset.tag;
-            const index = state.selectedTags.indexOf(tag);
+            const label = this.closest('.tag-item');
             
-            if (index > -1) {
-                state.selectedTags.splice(index, 1);
-                this.classList.remove('active');
+            if (this.checked) {
+                if (!state.selectedTags.includes(tag)) {
+                    state.selectedTags.push(tag);
+                }
+                label.classList.add('active');
             } else {
-                state.selectedTags.push(tag);
-                this.classList.add('active');
+                state.selectedTags = state.selectedTags.filter(t => t !== tag);
+                label.classList.remove('active');
             }
             
             state.page = 1;
             render();
         });
     });
+    
+    // 分类折叠/展开
+    dom.tagSidebar.querySelectorAll('.tag-group-title').forEach(el => {
+        el.addEventListener('click', function() {
+            const items = this.nextElementSibling;
+            const arrow = this.querySelector('.arrow');
+            if (items) {
+                items.classList.toggle('collapsed');
+                if (arrow) arrow.classList.toggle('collapsed');
+            }
+        });
+    });
 }
 
-// ---------- 7. 主渲染 ----------
+// ---------- 8. 主渲染 ----------
 function render() {
     const events = getAllEvents();
     const total = events.length;
@@ -187,10 +250,12 @@ function render() {
     const start = (state.page - 1) * state.pageSize;
     const pageData = events.slice(start, start + state.pageSize);
 
-    const tagLabel = state.selectedTags.length ? ` [标签: ${state.selectedTags.join('+')}]` : '';
+    // 更新计数
+    const tagLabel = state.selectedTags.length ? ` [标签: ${state.selectedTags.length}个]` : '';
     dom.count.textContent = `${total} 项 (${state.season === 'all' ? '全部赛季' : state.season}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
-    renderTags(events);
+    // 渲染标签侧边栏
+    renderTagSidebar(events);
 
     if (!total) {
         dom.content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
@@ -198,6 +263,7 @@ function render() {
         return;
     }
 
+    // 分组
     const groups = {};
     pageData.forEach(e => {
         const s = e._season || '未分类';
@@ -216,11 +282,10 @@ function render() {
     renderPagination(totalPages);
 }
 
-// ---------- 8. 列表/卡片渲染 ----------
+// ---------- 9. 列表/卡片渲染 ----------
 function renderList(items) {
     let html = `<div class="event-list">`;
     items.forEach(e => {
-        // 过滤掉大类标签再显示
         const displayTags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
         const tagsHtml = displayTags.map(t => `<span class="mini-tag">${t}</span>`).join('');
         html += `
@@ -262,7 +327,7 @@ function renderGrid(items) {
     return html + `</div>`;
 }
 
-// ---------- 9. 分页 ----------
+// ---------- 10. 分页 ----------
 function renderPagination(totalPages) {
     if (!dom.pagination || totalPages <= 1) {
         dom.pagination.innerHTML = '';
@@ -299,7 +364,21 @@ function renderPagination(totalPages) {
     });
 }
 
-// ---------- 10. 错误提示 ----------
+// ---------- 11. 清除所有标签 ----------
+if (dom.clearTagsBtn) {
+    dom.clearTagsBtn.addEventListener('click', function() {
+        state.selectedTags = [];
+        // 取消所有复选框的选中状态
+        dom.tagSidebar.querySelectorAll('.tag-item input[type="checkbox"]').forEach(el => {
+            el.checked = false;
+            el.closest('.tag-item').classList.remove('active');
+        });
+        state.page = 1;
+        render();
+    });
+}
+
+// ---------- 12. 错误提示 ----------
 function showError(msg) {
     const old = dom.content.querySelector('.error-banner');
     if (old) old.remove();
@@ -310,7 +389,7 @@ function showError(msg) {
     dom.content.prepend(el);
 }
 
-// ---------- 11. 绑定事件 ----------
+// ---------- 13. 绑定事件 ----------
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
         $$('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
@@ -330,8 +409,8 @@ document.querySelectorAll('.view-btn').forEach(el => {
     });
 });
 
-// ---------- 12. 启动 ----------
+// ---------- 14. 启动 ----------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 启动（标签排除大类版）...');
+    console.log('📄 启动（纵向标签版）...');
     loadSeasonList();
 });
