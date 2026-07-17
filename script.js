@@ -23,7 +23,7 @@ const paginationContainer = $('pagination-container');
 // ---------- 1. 加载赛季列表 ----------
 async function loadSeasonList() {
     try {
-        const res = await fetch('data/index.json');
+        const res = await fetch('index.json');
         if (!res.ok) throw new Error('index.json 不存在');
         const data = await res.json();
         state.allSeasons = data.seasons || [];
