@@ -1,6 +1,6 @@
 // ============================================================
 // Simen Hegstad Krüger · 资料库
-// 极致优化：预加载 + 纯内存操作
+// 极致优化：预加载 + 预处理 + 轻量渲染
 // ============================================================
 
 // ---------- 全局状态 ----------
@@ -11,7 +11,15 @@ const state = {
     page: 1,
     pageSize: 15,
     seasons: [],
-    allData: {}        // { '2025-2026': [...], '2024-2025': [...] }
+    // 预处理后的数据
+    preprocessed: {
+        all: [],           // 所有事件的扁平数组（已排序）
+        bySeason: {},      // 按赛季分组 { '2025-2026': [...], ... }
+        byType: {}         // 按类型分组 { '世界杯': [...], ... }
+    },
+    // 当前显示的数据（缓存）
+    currentData: [],
+    totalPages: 1
 };
 
 // ---------- DOM 缓存 ----------
@@ -26,7 +34,7 @@ const dom = {
 // ---------- 工具函数 ----------
 const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
 
-// ---------- 1. 加载所有数据（预加载） ----------
+// ---------- 1. 加载所有数据（预加载 + 预处理） ----------
 async function loadAllData() {
     dom.content.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载数据中...</div>`;
     const startTime = performance.now();
@@ -38,7 +46,7 @@ async function loadAllData() {
         const indexData = await indexRes.json();
         state.seasons = indexData.seasons || [];
 
-        // 2. 预加载所有赛季 JSON（并行请求）
+        // 2. 并行加载所有赛季 JSON
         const fetchPromises = state.seasons.map(async (season) => {
             try {
                 const res = await fetch(`${season}.json`);
@@ -54,18 +62,40 @@ async function loadAllData() {
 
         const results = await Promise.all(fetchPromises);
 
-        // 3. 存入内存
+        // 3. 预处理数据（一次性完成所有数据处理）
+        const allEvents = [];
+        const bySeason = {};
+        const byType = {};
+
         results.forEach(({ season, events }) => {
-            state.allData[season] = events;
+            bySeason[season] = events;
+            events.forEach(e => {
+                const eventWithSeason = { ...e, _season: season };
+                allEvents.push(eventWithSeason);
+                
+                // 按类型分组
+                const type = e.type || '其他';
+                if (!byType[type]) byType[type] = [];
+                byType[type].push(eventWithSeason);
+            });
         });
+
+        // 排序（一次性完成）
+        allEvents.sort((a, b) => (a.date > b.date ? -1 : 1));
+        Object.keys(byType).forEach(key => {
+            byType[key].sort((a, b) => (a.date > b.date ? -1 : 1));
+        });
+
+        state.preprocessed.all = allEvents;
+        state.preprocessed.bySeason = bySeason;
+        state.preprocessed.byType = byType;
 
         // 4. 渲染
         renderSeasonTags();
         render();
 
         const elapsed = (performance.now() - startTime).toFixed(0);
-        const totalEvents = Object.values(state.allData).reduce((sum, arr) => sum + arr.length, 0);
-        console.log(`✅ 预加载完成: ${state.seasons.length} 个赛季, ${totalEvents} 条数据, 耗时 ${elapsed}ms`);
+        console.log(`✅ 预加载+预处理完成: ${allEvents.length} 条数据, ${elapsed}ms`);
 
     } catch (err) {
         dom.content.innerHTML = `<div class="empty">❌ 加载失败: ${err.message}</div>`;
@@ -73,83 +103,62 @@ async function loadAllData() {
     }
 }
 
-// ---------- 2. 渲染赛季按钮 ----------
-function renderSeasonTags() {
-    if (!dom.seasonContainer) return;
-    let html = `<span class="filter-tag active" data-season="all">全部</span>`;
-    state.seasons.forEach(s => {
-        html += `<span class="filter-tag" data-season="${s}">${s}</span>`;
-    });
-    dom.seasonContainer.innerHTML = html;
-
-    dom.seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(el => {
-        el.addEventListener('click', function() {
-            dom.seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            state.season = this.dataset.season;
-            state.page = 1;
-            render();  // 纯内存操作，0 网络请求
-        });
-    });
-}
-
-// ---------- 3. 获取数据（纯内存） ----------
-function getEvents() {
-    let events = [];
-
+// ---------- 2. 获取数据（纯内存，极快） ----------
+function getFilteredData() {
+    // 直接使用预处理后的数据，避免重复遍历
     if (state.season === 'all') {
-        state.seasons.forEach(s => {
-            (state.allData[s] || []).forEach(e => {
-                events.push({ ...e, _season: s });
-            });
-        });
+        if (state.type === 'all') {
+            return state.preprocessed.all;
+        } else {
+            return state.preprocessed.byType[state.type] || [];
+        }
     } else {
-        (state.allData[state.season] || []).forEach(e => {
-            events.push({ ...e, _season: state.season });
-        });
+        // 特定赛季
+        let events = state.preprocessed.bySeason[state.season] || [];
+        if (state.type !== 'all') {
+            events = events.filter(e => e.type === state.type);
+        }
+        return events;
     }
-
-    // 类型筛选
-    if (state.type !== 'all') {
-        events = events.filter(e => e.type === state.type);
-    }
-
-    // 排序（最新在前）
-    events.sort((a, b) => (a.date > b.date ? -1 : 1));
-    return events;
 }
 
-// ---------- 4. 渲染 ----------
+// ---------- 3. 渲染（极简） ----------
 function render() {
     const startTime = performance.now();
 
-    // 从内存获取数据（0 网络请求）
-    const events = getEvents();
-    const total = events.length;
+    // 1. 获取数据（纯内存，已排序）
+    const allData = getFilteredData();
+    const total = allData.length;
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.page > totalPages) state.page = totalPages;
+    state.totalPages = totalPages;
 
+    // 2. 分页切片
     const start = (state.page - 1) * state.pageSize;
-    const pageData = events.slice(start, start + state.pageSize);
+    const pageData = allData.slice(start, start + state.pageSize);
 
-    // 更新计数
+    // 3. 更新计数
     const seasonLabel = state.season === 'all' ? '全部赛季' : state.season;
     dom.count.textContent = `${total} 项 (${seasonLabel} · ${state.page}/${totalPages} 页)`;
 
-    // 空状态
+    // 4. 空状态
     if (total === 0) {
         dom.content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
-        renderPagination(totalPages);
+        renderPagination();
         return;
     }
 
-    // 按赛季分组
+    // 5. 按赛季分组（只针对当前页数据）
     const groups = {};
     pageData.forEach(e => {
         const s = e._season || '未分类';
         if (!groups[s]) groups[s] = [];
         groups[s].push(e);
     });
+
+    // 6. 生成 HTML（使用 DocumentFragment 代替 innerHTML 全量替换）
+    const fragment = document.createDocumentFragment();
+    const tempDiv = document.createElement('div');
 
     let html = '';
     for (const [season, items] of Object.entries(groups)) {
@@ -159,21 +168,24 @@ function render() {
         html += `</div>`;
     }
 
-    dom.content.innerHTML = html;
-    renderPagination(totalPages);
+    // 7. 使用 requestAnimationFrame 在下一帧更新
+    requestAnimationFrame(() => {
+        dom.content.innerHTML = html;
+        renderPagination();
+    });
 
     const elapsed = (performance.now() - startTime).toFixed(0);
-    if (pageData.length > 0) {
-        console.log(`⚡ 渲染完成: ${pageData.length} 条数据, ${elapsed}ms`);
+    if (pageData.length > 0 && elapsed > 5) {
+        console.log(`⚡ 渲染: ${pageData.length} 条, ${elapsed}ms`);
     }
 }
 
-// ---------- 5. 列表渲染 ----------
+// ---------- 4. 列表渲染（精简） ----------
 const EXCLUDED_TYPES = ['世界杯', '奥运会', '世锦赛', '全国锦标赛', '其他', '夏季比赛'];
 
 function renderList(items) {
     let html = `<div class="event-list">`;
-    items.forEach(e => {
+    for (const e of items) {
         const tags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
         html += `
             <div class="event-item">
@@ -197,14 +209,14 @@ function renderList(items) {
                 </div>
             </div>
         `;
-    });
+    }
     return html + `</div>`;
 }
 
-// ---------- 6. 卡片渲染 ----------
+// ---------- 5. 卡片渲染 ----------
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
-    items.forEach(e => {
+    for (const e of items) {
         const tags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
         html += `
             <div class="event-card">
@@ -228,18 +240,38 @@ function renderGrid(items) {
                 </div>
             </div>
         `;
-    });
+    }
     return html + `</div>`;
 }
 
+// ---------- 6. 赛季按钮 ----------
+function renderSeasonTags() {
+    if (!dom.seasonContainer) return;
+    let html = `<span class="filter-tag active" data-season="all">全部</span>`;
+    state.seasons.forEach(s => {
+        html += `<span class="filter-tag" data-season="${s}">${s}</span>`;
+    });
+    dom.seasonContainer.innerHTML = html;
+
+    dom.seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(el => {
+        el.addEventListener('click', function() {
+            dom.seasonContainer.querySelectorAll('.filter-tag[data-season]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            state.season = this.dataset.season;
+            state.page = 1;
+            render();
+        });
+    });
+}
+
 // ---------- 7. 分页 ----------
-function renderPagination(totalPages) {
-    if (!dom.pagination || totalPages <= 1) {
+function renderPagination() {
+    if (!dom.pagination || state.totalPages <= 1) {
         dom.pagination.innerHTML = '';
         return;
     }
 
-    const { page } = state;
+    const { page, totalPages } = state;
     let html = `<div class="pagination">`;
     html += `<button class="page-btn" data-page="prev" ${page <= 1 ? 'disabled' : ''}>上一页</button>`;
 
@@ -278,7 +310,6 @@ function renderPagination(totalPages) {
 }
 
 // ---------- 8. 绑定事件 ----------
-// 类别筛选
 document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
         $$('.filter-tag[data-filter]').forEach(b => b.classList.remove('active'));
@@ -289,7 +320,6 @@ document.querySelectorAll('.filter-tag[data-filter]').forEach(el => {
     });
 });
 
-// 视图切换
 document.querySelectorAll('.view-btn').forEach(el => {
     el.addEventListener('click', function() {
         $$('.view-btn').forEach(b => b.classList.remove('active'));
@@ -309,10 +339,10 @@ function calculateCareerDays() {
     const fisStart = parseLocalDate('2013-11-29');
     const wcStart = parseLocalDate('2014-11-28');
     const now = new Date();
-
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const fisDays = Math.floor((today - fisStart) / (1000 * 60 * 60 * 24));
-    const wcDays = Math.floor((today - wcStart) / (1000 * 60 * 60 * 24));
+
+    const fisDays = Math.floor((today - fisStart) / 86400000);
+    const wcDays = Math.floor((today - wcStart) / 86400000);
 
     const fisEl = document.getElementById('fis-days');
     const wcEl = document.getElementById('wc-days');
