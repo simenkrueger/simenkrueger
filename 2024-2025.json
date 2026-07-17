@@ -2,158 +2,84 @@
   "season": "2024-2025",
   "events": [
     {
-      "id": 13,
-      "title": "世界花样滑冰锦标赛 2025",
-      "date": "2025-03-22",
-      "type": "比赛",
+      "id": 7,
+      "title": "冬奥会 50km 集体出发",
+      "date": "2025-02-15",
+      "type": "奥运会",
       "result": "🥇 金牌",
-      "location": "美国波士顿",
-      "description": "总分 320.45 分",
-      "photo": "https://weibo.com/xxx/photo13",
-      "video": "https://weibo.com/xxx/video13"
+      "location": "意大利·米兰",
+      "description": "自由式，用时 2:05:12.4",
+      "tags": ["奥运会", "长距离", "集体出发", "自由式", "金牌"]
+    },
+    {
+      "id": 8,
+      "title": "冬奥会 15km 间隔出发",
+      "date": "2025-02-10",
+      "type": "奥运会",
+      "result": "🥈 银牌",
+      "location": "意大利·米兰",
+      "description": "经典式，用时 35:22.6",
+      "tags": ["奥运会", "中距离", "间隔出发", "经典式", "银牌"]
+    },
+    {
+      "id": 9,
+      "title": "世界杯 瑞士站 10km 间隔出发",
+      "date": "2025-01-18",
+      "type": "世界杯",
+      "result": "🥇 金牌",
+      "location": "瑞士·达沃斯",
+      "description": "自由式，用时 23:45.3",
+      "tags": ["世界杯", "中距离", "自由式", "瑞士站", "金牌"]
+    },
+    {
+      "id": 10,
+      "title": "世界杯 法国站 30km 集体出发",
+      "date": "2024-12-08",
+      "type": "世界杯",
+      "result": "🥉 铜牌",
+      "location": "法国·安纳西",
+      "description": "经典式，用时 1:18:34.2",
+      "tags": ["世界杯", "长距离", "经典式", "法国站", "铜牌"]
+    },
+    {
+      "id": 11,
+      "title": "世锦赛 30km 追逐赛",
+      "date": "2024-11-20",
+      "type": "世锦赛",
+      "result": "🥇 金牌",
+      "location": "德国·奥伯斯多夫",
+      "description": "自由式，用时 1:12:18.7",
+      "tags": ["世锦赛", "追逐赛", "自由式", "金牌"]
+    },
+    {
+      "id": 12,
+      "title": "挪威全国锦标赛 50km",
+      "date": "2024-10-12",
+      "type": "全国锦标赛",
+      "result": "🏆 冠军",
+      "location": "挪威·特隆赫姆",
+      "description": "经典式，用时 2:18:45.3",
+      "tags": ["全国锦标赛", "长距离", "经典式", "冠军"]
+    },
+    {
+      "id": 13,
+      "title": "夏季滑雪锦标赛 15km",
+      "date": "2024-08-10",
+      "type": "夏季比赛",
+      "result": "🥇 金牌",
+      "location": "挪威·特隆赫姆",
+      "description": "自由式，用时 38:12.5",
+      "tags": ["夏季比赛", "自由式", "金牌"]
     },
     {
       "id": 14,
-      "title": "四大洲花样滑冰锦标赛 2025",
-      "date": "2025-02-16",
-      "type": "比赛",
+      "title": "世界杯 瑞典站 10km 间隔出发",
+      "date": "2024-11-18",
+      "type": "世界杯",
       "result": "🥇 金牌",
-      "location": "韩国首尔",
-      "description": "总分 323.23 分",
-      "photo": "https://weibo.com/xxx/photo14",
-      "video": "https://weibo.com/xxx/video14"
-    },
-    {
-      "id": 15,
-      "title": "全日本花样滑冰锦标赛 2024",
-      "date": "2024-12-20",
-      "type": "比赛",
-      "result": "🏆 冠军",
-      "location": "日本东京",
-      "description": "总分 313.99 分",
-      "photo": "https://weibo.com/xxx/photo15",
-      "video": "https://weibo.com/xxx/video15"
-    },
-    {
-      "id": 16,
-      "title": "花样滑冰大奖赛总决赛 2024",
-      "date": "2024-12-05",
-      "type": "比赛",
-      "result": "🥇 金牌",
-      "location": "法国格勒诺布尔",
-      "description": "总分 296.78 分",
-      "photo": "https://weibo.com/xxx/photo16",
-      "video": "https://weibo.com/xxx/video16"
-    },
-    {
-      "id": 17,
-      "title": "NHK杯 2024",
-      "date": "2024-11-08",
-      "type": "比赛",
-      "result": "🥇 金牌",
-      "location": "日本大阪",
-      "description": "总分 293.68 分",
-      "photo": "https://weibo.com/xxx/photo17",
-      "video": "https://weibo.com/xxx/video17"
-    },
-    {
-      "id": 18,
-      "title": "Skate Canada 2024",
-      "date": "2024-10-25",
-      "type": "比赛",
-      "result": "🥇 金牌",
-      "location": "加拿大温哥华",
-      "description": "总分 300.90 分",
-      "photo": "https://weibo.com/xxx/photo18",
-      "video": "https://weibo.com/xxx/video18"
-    },
-    {
-      "id": 19,
-      "title": "Fantasy on Ice 2025 幕张",
-      "date": "2025-06-21",
-      "type": "冰演",
-      "result": "",
-      "location": "日本幕张",
-      "description": "新节目 'Hope & Legacy 2025'",
-      "photo": "https://weibo.com/xxx/photo19",
-      "video": "https://weibo.com/xxx/video19"
-    },
-    {
-      "id": 20,
-      "title": "Fantasy on Ice 2025 神户",
-      "date": "2025-06-28",
-      "type": "冰演",
-      "result": "",
-      "location": "日本神户",
-      "description": "曲目：SEIMEI、Hope & Legacy",
-      "photo": "https://weibo.com/xxx/photo20",
-      "video": ""
-    },
-    {
-      "id": 21,
-      "title": "Fantasy on Ice 2025 静冈",
-      "date": "2025-07-05",
-      "type": "冰演",
-      "result": "",
-      "location": "日本静冈",
-      "description": "赛季末冰演，与特别嘉宾共演",
-      "photo": "https://weibo.com/xxx/photo21",
-      "video": ""
-    },
-    {
-      "id": 22,
-      "title": "Stars on Ice 2025 东京",
-      "date": "2025-04-12",
-      "type": "冰演",
-      "result": "",
-      "location": "日本东京",
-      "description": "表演曲目：'SEIMEI'",
-      "photo": "https://weibo.com/xxx/photo22",
-      "video": "https://weibo.com/xxx/video22"
-    },
-    {
-      "id": 23,
-      "title": "NHK杯 2024 赛前采访",
-      "date": "2024-11-06",
-      "type": "采访",
-      "result": "",
-      "location": "日本大阪",
-      "description": "'希望能在冰面上展现最好的自己'",
-      "photo": "https://weibo.com/xxx/photo23",
-      "video": "https://weibo.com/xxx/video23"
-    },
-    {
-      "id": 24,
-      "title": "冬奥会纪念展览 2024",
-      "date": "2024-09-10",
-      "type": "展览",
-      "result": "",
-      "location": "日本横滨",
-      "description": "平昌冬奥会连冠10周年纪念展",
-      "photo": "https://weibo.com/xxx/photo24",
-      "video": ""
-    },
-    {
-      "id": 25,
-      "title": "世界锦标赛 2025 赛后采访",
-      "date": "2025-03-23",
-      "type": "采访",
-      "result": "",
-      "location": "美国波士顿",
-      "description": "'感谢大家一路的支持，我会继续前进'",
-      "photo": "https://weibo.com/xxx/photo25",
-      "video": "https://weibo.com/xxx/video25"
-    },
-    {
-      "id": 26,
-      "title": "圣诞冰上演出 2024",
-      "date": "2024-12-24",
-      "type": "冰演",
-      "result": "",
-      "location": "日本名古屋",
-      "description": "圣诞特别演出，与粉丝共度平安夜",
-      "photo": "https://weibo.com/xxx/photo26",
-      "video": ""
+      "location": "瑞典·埃斯比约",
+      "description": "自由式，用时 23:58.2",
+      "tags": ["世界杯", "中距离", "自由式", "瑞典站", "金牌"]
     }
   ]
 }
