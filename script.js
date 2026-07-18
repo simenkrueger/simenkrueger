@@ -407,11 +407,65 @@ function updateRenderTime(startTime) {
 // ============================================================
 // 8. 列表渲染（折叠详情）
 // ============================================================
+// ============================================================
+// 列表渲染（支持多视频来源）
+// ============================================================
 function renderList(items) {
     let html = `<div class="event-list">`;
     for (const e of items) {
         const tags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
         const detailId = `detail-${e.id || Math.random().toString(36).substr(2, 9)}`;
+
+        // ---------- 生成视频按钮（支持多来源） ----------
+        let videoButtons = '';
+        const videos = e.videos || [];
+        
+        // 兼容旧格式：如果有 video 字段但没有 videos 数组
+        if (videos.length === 0 && e.video) {
+            // 自动识别来源
+            let source = '视频';
+            if (e.video.includes('youtube.com') || e.video.includes('youtu.be')) source = 'YouTube';
+            else if (e.video.includes('bilibili.com')) source = 'Bilibili';
+            else if (e.video.includes('weibo.com')) source = '微博';
+            else if (e.video.includes('youku.com')) source = '优酷';
+            else if (e.video.includes('v.qq.com')) source = '腾讯';
+            
+            videos.push({ url: e.video, source: source, label: '' });
+        }
+
+        if (videos.length > 0) {
+            const sourceIcons = {
+                'YouTube': 'fab fa-youtube',
+                'Bilibili': 'fab fa-bilibili',
+                '微博': 'fab fa-weibo',
+                '优酷': 'fab fa-youku',
+                '腾讯': 'fab fa-tencent',
+                '默认': 'fas fa-video'
+            };
+            const sourceColors = {
+                'YouTube': '#FF0000',
+                'Bilibili': '#00A1D6',
+                '微博': '#FF8200',
+                '优酷': '#FF6600',
+                '腾讯': '#00B4E3',
+                '默认': '#b3412a'
+            };
+
+            videos.forEach((v, index) => {
+                const icon = sourceIcons[v.source] || sourceIcons['默认'];
+                const color = sourceColors[v.source] || sourceColors['默认'];
+                const tooltip = v.label ? `${v.source} · ${v.label}` : v.source;
+                videoButtons += `
+                    <a href="${v.url}" target="_blank" class="link-btn video-btn" 
+                       style="background:${color}; color:white;"
+                       title="${tooltip}">
+                        <i class="${icon}"></i>
+                        ${videos.length > 1 ? `<span class="video-index">${index + 1}</span>` : ''}
+                        <span class="video-source-label">${v.source}</span>
+                    </a>
+                `;
+            });
+        }
 
         html += `
             <div class="event-item">
@@ -435,7 +489,7 @@ function renderList(items) {
                     <span class="event-tags">${tags.map(t => `<span class="mini-tag">${t}</span>`).join('')}</span>
                     <div class="event-links">
                         ${e.photo ? `<a href="${e.photo}" target="_blank" class="link-btn photo" title="照片"><i class="fas fa-image"></i></a>` : ''}
-                        ${e.video ? `<a href="${e.video}" target="_blank" class="link-btn video" title="视频"><i class="fas fa-video"></i></a>` : ''}
+                        ${videoButtons}
                         ${e.fisLink ? `<a href="${e.fisLink}" target="_blank" class="link-btn fis" title="FIS官网"><i class="fas fa-globe"></i></a>` : ''}
                         ${e.pdf ? `<a href="${e.pdf}" target="_blank" class="link-btn pdf" title="PDF报告"><i class="fas fa-file-pdf"></i></a>` : ''}
                     </div>
@@ -447,13 +501,62 @@ function renderList(items) {
 }
 
 // ============================================================
-// 9. 卡片渲染（折叠详情）
+// 卡片渲染（支持多视频来源）
 // ============================================================
 function renderGrid(items) {
     let html = `<div class="event-grid">`;
     for (const e of items) {
         const tags = (e.tags || []).filter(t => !EXCLUDED_TYPES.includes(t));
         const detailId = `detail-${e.id || Math.random().toString(36).substr(2, 9)}`;
+
+        // ---------- 生成视频按钮（支持多来源） ----------
+        let videoButtons = '';
+        const videos = e.videos || [];
+        
+        // 兼容旧格式
+        if (videos.length === 0 && e.video) {
+            let source = '视频';
+            if (e.video.includes('youtube.com') || e.video.includes('youtu.be')) source = 'YouTube';
+            else if (e.video.includes('bilibili.com')) source = 'Bilibili';
+            else if (e.video.includes('weibo.com')) source = '微博';
+            else if (e.video.includes('youku.com')) source = '优酷';
+            else if (e.video.includes('v.qq.com')) source = '腾讯';
+            
+            videos.push({ url: e.video, source: source, label: '' });
+        }
+
+        if (videos.length > 0) {
+            const sourceIcons = {
+                'YouTube': 'fab fa-youtube',
+                'Bilibili': 'fab fa-bilibili',
+                '微博': 'fab fa-weibo',
+                '优酷': 'fab fa-youku',
+                '腾讯': 'fab fa-tencent',
+                '默认': 'fas fa-video'
+            };
+            const sourceColors = {
+                'YouTube': '#FF0000',
+                'Bilibili': '#00A1D6',
+                '微博': '#FF8200',
+                '优酷': '#FF6600',
+                '腾讯': '#00B4E3',
+                '默认': '#b3412a'
+            };
+
+            videos.forEach((v, index) => {
+                const icon = sourceIcons[v.source] || sourceIcons['默认'];
+                const color = sourceColors[v.source] || sourceColors['默认'];
+                const tooltip = v.label ? `${v.source} · ${v.label}` : v.source;
+                videoButtons += `
+                    <a href="${v.url}" target="_blank" class="link-btn video-btn" 
+                       style="background:${color}; color:white;"
+                       title="${tooltip}">
+                        <i class="${icon}"></i>
+                        ${videos.length > 1 ? `<span class="video-index">${index + 1}</span>` : ''}
+                    </a>
+                `;
+            });
+        }
 
         html += `
             <div class="event-card">
@@ -478,7 +581,7 @@ function renderGrid(items) {
                     <span class="event-tags">${tags.map(t => `<span class="mini-tag">${t}</span>`).join('')}</span>
                     <div class="event-links">
                         ${e.photo ? `<a href="${e.photo}" target="_blank" class="link-btn photo" title="照片"><i class="fas fa-image"></i></a>` : ''}
-                        ${e.video ? `<a href="${e.video}" target="_blank" class="link-btn video" title="视频"><i class="fas fa-video"></i></a>` : ''}
+                        ${videoButtons}
                         ${e.fisLink ? `<a href="${e.fisLink}" target="_blank" class="link-btn fis" title="FIS官网"><i class="fas fa-globe"></i></a>` : ''}
                         ${e.pdf ? `<a href="${e.pdf}" target="_blank" class="link-btn pdf" title="PDF报告"><i class="fas fa-file-pdf"></i></a>` : ''}
                     </div>
@@ -488,7 +591,6 @@ function renderGrid(items) {
     }
     return html + `</div>`;
 }
-
 // ============================================================
 // 10. 赛季按钮
 // ============================================================
