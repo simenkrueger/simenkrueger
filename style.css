@@ -750,3 +750,55 @@ body {
     justify-content: space-between;
     align-items: center;
 }
+/* ===== 视频按钮 ===== */
+.video-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0.15rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.65rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    position: relative;
+    color: white !important;
+    font-weight: 500;
+}
+
+.video-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.video-btn .video-index {
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    font-weight: 700;
+}
+
+.video-btn .video-source-label {
+    font-size: 0.55rem;
+    opacity: 0.9;
+}
+
+/* ===== 卡片中的视频按钮 ===== */
+.event-card .video-btn {
+    padding: 0.1rem 0.5rem;
+    font-size: 0.6rem;
+}
+
+.event-card .video-btn .video-source-label {
+    display: none;
+}
+
+.event-card .video-btn .video-index {
+    width: 14px;
+    height: 14px;
+    font-size: 0.5rem;
+}
