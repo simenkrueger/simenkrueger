@@ -87,7 +87,7 @@ const TAG_CATEGORIES = [
         label: '距离',
         icon: '📏',
         tags: [
-            { key: '短距离', label: '短距离' },
+            { key: '短距离 5km以下', label: '短距离 5km以下' },
             { key: '中短距离 5-10km', label: '中短距离 5-10km' },
             { key: '中长距离 10-30km', label: '中长距离 10-30km' },
             { key: '长距离 30km+', label: '长距离 30km+' }
