@@ -43,6 +43,7 @@ const TAG_CATEGORIES = [
             { key: '铜牌', label: '铜牌' },
             { key: '前五', label: '前五' },
             { key: '前十', label: '前十' }
+            { key: '前30', label: '前30' }
         ]
     },
     {
