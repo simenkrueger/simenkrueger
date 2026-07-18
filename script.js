@@ -33,19 +33,19 @@ const TAG_CATEGORIES = [
             { key: '混合式', label: '混合式' }
         ]
     },
-  {
-    id: 'result',
-    label: '成绩',
-    icon: '🏅',
-    tags: [
-        { key: '金牌', label: '金牌' },
-        { key: '银牌', label: '银牌' },
-        { key: '铜牌', label: '铜牌' },
-        { key: '前五', label: '前五' },
-        { key: '前十', label: '前十' },
-        { key: '前30', label: '前30' }
-    ]
-},
+    {
+        id: 'result',
+        label: '成绩',
+        icon: '🏅',
+        tags: [
+            { key: '金牌', label: '金牌' },
+            { key: '银牌', label: '银牌' },
+            { key: '铜牌', label: '铜牌' },
+            { key: '前五', label: '前五' },
+            { key: '前十', label: '前十' },
+            { key: '前30', label: '前30' }
+        ]
+    },  // ← 加逗号
     {
         id: 'location',
         label: '比赛地点',
@@ -365,8 +365,8 @@ function render() {
     const tagLabel = state.selectedTags.length ? ` [${state.selectedTags.join('+')}]` : '';
     dom.count.textContent = `${total} 项 (${seasonLabel}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
-    // ❌ 删除这行！renderTagSidebar();
-    // 只在数据加载和标签变化时更新侧边栏
+    // ✅ 恢复这行，更新侧边栏选中状态
+    renderTagSidebar();
 
     if (total === 0) {
         dom.content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i> 暂无数据</div>`;
@@ -374,6 +374,26 @@ function render() {
         updateRenderTime(renderStart);
         return;
     }
+
+    const groups = {};
+    pageData.forEach(e => {
+        const s = e._season || '未分类';
+        if (!groups[s]) groups[s] = [];
+        groups[s].push(e);
+    });
+
+    let html = '';
+    for (const [season, items] of Object.entries(groups)) {
+        html += `<div class="season-group">`;
+        html += `<div class="season-title"><i class="fas fa-trophy"></i> ${season} <span class="count">${items.length} 项</span></div>`;
+        html += state.view === 'list' ? renderList(items) : renderGrid(items);
+        html += `</div>`;
+    }
+
+    dom.content.innerHTML = html;
+    renderPagination();
+    updateRenderTime(renderStart);
+}
 
     const groups = {};
     pageData.forEach(e => {
