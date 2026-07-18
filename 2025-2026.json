@@ -9,7 +9,7 @@
       "result": "第6",
       "location": "挪威·Oslo",
       "description": "最终冲刺阶段遗憾地落败给队友，但总体滑得挺不错的",
-      "tags": ["自由式", "长距离 30km+", "前十", "挪威站"]
+      "tags": ["自由式", "长距离 30km+", "前十", "挪威站"],
       "videos": [
     {
       "url": "https://video.weibo.com/show?fid=1034:5292785918738493",
@@ -20,7 +20,7 @@
       "url": "https://video.weibo.com/show?fid=1034:5292792675762205",
       "source": "微博",
       "label": "Okko Sport清流"
-    },
+    }
   ]
     {
       "id": 2,
