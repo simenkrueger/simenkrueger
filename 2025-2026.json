@@ -3,13 +3,26 @@
   "events": [
     {
       "id": 1,
-      "title": "世界杯 挪威站 50km 集体出发",
-      "date": "2026-03-15",
+      "title": "世界杯 挪威 50km 集体出发 自由式",
+      "date": "2026-03-14",
       "type": "世界杯",
-      "result": "🥇 金牌",
-      "location": "挪威·特隆赫姆",
-      "description": "传统式，用时 2:08:34.5",
-      "tags": ["传统式", "长距离 30km+", "金牌", "挪威站"]
+      "result": "第6",
+      "location": "挪威·Oslo",
+      "description": "最终冲刺阶段遗憾地落败给队友，但总体滑得挺不错的",
+      "tags": ["自由式", "长距离 30km+", "前十", "挪威站"]
+      "videos": [
+    {
+      "url": "https://video.weibo.com/show?fid=1034:5292785918738493",
+      "source": "微博",
+      "label": "Eurosport源"
+    },
+    {
+      "url": "https://video.weibo.com/show?fid=1034:5292792675762205",
+      "source": "微博",
+      "label": "Okko Sport清流"
+    }
+  ]
+}
     },
     {
       "id": 2,
