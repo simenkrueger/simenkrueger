@@ -359,13 +359,12 @@ function render() {
 
     const start = (state.page - 1) * state.pageSize;
     const pageIds = ids.slice(start, start + state.pageSize);
-    const pageData = pageIds.map(id => state.eventMap[id]).filter(Boolean);
+    const pageData = pageIds.map(id => state.eventMap[id]).filter(Boolean);  // ← 移到这里
 
     const seasonLabel = state.season === 'all' ? '全部赛季' : state.season;
     const tagLabel = state.selectedTags.length ? ` [${state.selectedTags.join('+')}]` : '';
     dom.count.textContent = `${total} 项 (${seasonLabel}${tagLabel} · ${state.page}/${totalPages} 页)`;
 
-    // ✅ 恢复这行，更新侧边栏选中状态
     renderTagSidebar();
 
     if (total === 0) {
@@ -394,26 +393,6 @@ function render() {
     renderPagination();
     updateRenderTime(renderStart);
 }
-
-    const groups = {};
-    pageData.forEach(e => {
-        const s = e._season || '未分类';
-        if (!groups[s]) groups[s] = [];
-        groups[s].push(e);
-    });
-
-    let html = '';
-    for (const [season, items] of Object.entries(groups)) {
-        html += `<div class="season-group">`;
-        html += `<div class="season-title"><i class="fas fa-trophy"></i> ${season} <span class="count">${items.length} 项</span></div>`;
-        html += state.view === 'list' ? renderList(items) : renderGrid(items);
-        html += `</div>`;
-    }
-
-    dom.content.innerHTML = html;
-    renderPagination();
-    updateRenderTime(renderStart);
-
 
 // ============================================================
 // 7. 更新渲染时间
