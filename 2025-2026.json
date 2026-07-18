@@ -47,13 +47,20 @@
     },
     {
       "id": 3,
-      "title": "挪威全国锦标赛 30km 追逐赛",
-      "date": "2025-10-05",
-      "type": "全国锦标赛",
-      "result": "🏆 冠军",
-      "location": "挪威·利勒哈默尔",
-      "description": "混合式，用时 1:15:22.9",
-      "tags": ["混合式", "中长距离 10-30km", "金牌", "挪威站"]
+      "title": "世界杯 意大利 短距离 传统式 资格赛",
+      "date": "2026-01-03",
+      "type": "世界杯",
+      "result": "第68",
+      "location": "意大利·Val di Fiemme",
+      "description": "作为Tour de Ski的一站比赛，Krüger本赛季状态不太好，也不擅长短距离",
+      "tags": ["传统式", "短距离", "50-100名", "意大利站"],
+      "videos": [
+        {
+          "url": "https://video.weibo.com/show?fid=1034:5293164525715521",
+          "source": "微博",
+          "label": "Eurosport 1源"
+        },
+      ]
     },
     {
       "id": 4,
