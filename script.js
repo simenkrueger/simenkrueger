@@ -33,19 +33,19 @@ const TAG_CATEGORIES = [
             { key: '混合式', label: '混合式' }
         ]
     },
-    {
-        id: 'result',
-        label: '成绩',
-        icon: '🏅',
-        tags: [
-            { key: '金牌', label: '金牌' },
-            { key: '银牌', label: '银牌' },
-            { key: '铜牌', label: '铜牌' },
-            { key: '前五', label: '前五' },
-            { key: '前十', label: '前十' },
-            { key: '前30', label: '前30' }
-        ]
-    },
+   {
+  "id": "result",
+  "label": "成绩",
+  "icon": "🏅",
+  "tags": [
+    { "key": "金牌", "label": "金牌" },
+    { "key": "银牌", "label": "银牌" },
+    { "key": "铜牌", "label": "铜牌" },
+    { "key": "前五", "label": "前五" },
+    { "key": "前十", "label": "前十" },
+    { "key": "前30", "label": "前30" }
+  ]
+}
     {
         id: 'location',
         label: '比赛地点',
