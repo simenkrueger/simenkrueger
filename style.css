@@ -802,3 +802,106 @@ body {
     height: 14px;
     font-size: 0.5rem;
 }
+/* ===== 事件底部布局 ===== */
+.event-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding-top: 0.3rem;
+    border-top: 1px solid #eef2f7;
+}
+
+/* ===== 事件链接按钮容器 ===== */
+.event-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.5rem;
+    align-items: center;
+}
+
+/* ===== 链接按钮通用样式 ===== */
+.link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    min-width: 28px;
+    height: 28px;
+}
+
+.link-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.85;
+}
+
+/* 照片/资讯 - 蓝色 */
+.link-btn.photo {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.link-btn.photo:hover {
+    background: #1e40af;
+    color: white;
+}
+
+/* 视频 - 红色 (备用，当 .video-btn 不存在时) */
+.link-btn.video {
+    background: #fce9e6;
+    color: #b3412a;
+}
+.link-btn.video:hover {
+    background: #b3412a;
+    color: white;
+}
+
+/* FIS官网 - 绿色 */
+.link-btn.fis {
+    background: #d1fae5;
+    color: #065f46;
+}
+.link-btn.fis:hover {
+    background: #065f46;
+    color: white;
+}
+
+/* PDF - 橙色 */
+.link-btn.pdf {
+    background: #fef3c7;
+    color: #b45309;
+}
+.link-btn.pdf:hover {
+    background: #b45309;
+    color: white;
+}
+
+/* ===== 卡片中的链接按钮 ===== */
+.event-card .link-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.7rem;
+}
+
+.event-card .link-btn .fa-image,
+.event-card .link-btn .fa-video,
+.event-card .link-btn .fa-globe,
+.event-card .link-btn .fa-file-pdf {
+    font-size: 0.8rem;
+}
+
+.event-card .link-btn .video-source-label {
+    display: none;
+}
