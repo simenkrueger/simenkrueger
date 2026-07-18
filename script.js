@@ -48,7 +48,24 @@ const TAG_CATEGORIES = [
             { key: '30-50名', label: '30-50名' },
             { key: '50-100名', label: '50-100名' }
         ]
-    },  // ← 加逗号
+    }, 
+    {
+        id: 'start-form',
+        label: '出发方式',
+        icon: '🚩',
+        tags: [
+            { key: '个人间隔出发', label: '个人间隔出发' },
+            { key: '集体出发', label: '集体出发' },
+            { key: '双追逐', label: '双追逐' },
+            { key: '追逐', label: '追逐' },
+            { key: '分组集体出发', label: '分组集体出发' },
+            { key: '短距离', label: '短距离' },
+            { key: '接力', label: '接力' },
+            { key: '混合接力', label: '混合接力' },
+            { key: '团体短距离', label: '团体短距离' }    
+        ]
+    }, 
+
     {
         id: 'location',
         label: '比赛地点',
