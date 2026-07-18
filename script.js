@@ -413,7 +413,7 @@ function render() {
     dom.content.innerHTML = html;
     renderPagination();
     updateRenderTime(renderStart);
-}
+
 
 // ============================================================
 // 7. 更新渲染时间
