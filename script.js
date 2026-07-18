@@ -42,7 +42,8 @@ const TAG_CATEGORIES = [
             { key: '银牌', label: '银牌' },
             { key: '铜牌', label: '铜牌' },
             { key: '前五', label: '前五' },
-            { key: '前十', label: '前十' },
+            { key: '前10', label: '前10' },
+            { key: '前20', label: '前20' },
             { key: '前30', label: '前30' },
             { key: '30-50名', label: '30-50名' },
             { key: '50-100名', label: '50-100名' }
