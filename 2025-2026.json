@@ -22,6 +22,8 @@
           "label": "Okko Sport清流"
         }
       ]
+  "fisLink": "https://www.fis-ski.com/DB/general/results.html?sectorcode=CC&competitorid=158493&raceid=49522",
+  "fisLabel": "FIS官网"
     },
     {
       "id": 2,
@@ -44,6 +46,8 @@
           "label": "Okko Sport清流"
         }
       ]
+  "fisLink": "https://www.fis-ski.com/DB/general/results.html?sectorcode=CC&competitorid=158493&raceid=49543",
+  "fisLabel": "FIS官网"
     },
     {
       "id": 3,
@@ -61,6 +65,8 @@
           "label": "Eurosport 1源"
         }
       ]
+  "fisLink": "https://www.fis-ski.com/DB/general/results.html?sectorcode=CC&competitorid=158493&raceid=49545",
+  "fisLabel": "FIS官网"
     },
     {
       "id": 4,
